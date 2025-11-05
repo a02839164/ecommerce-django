@@ -1,0 +1,61 @@
+{% extends 'store/base.html' %}
+
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+    <style>
+        body{
+            background-color: gray;
+        }
+
+    </style>
+
+        <br>
+        <div class="container bg-white shadow-md p-5 form-layout">
+            <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                <a href="{% url 'profile-management' %}" style="position: absolute; left: 0; color: #717070c8;">
+                    <i class="fa fa-undo fa-2x" aria-hidden="true"></i>
+                </a>
+                <h3 style="margin: 0;">Account deletion</h3>
+            </div>
+            <hr>
+             <div class="text-center mt-4">
+                <p class="fs-5 text-muted">Are you sure that you want to delete your account?</p>
+                <p class="text-danger fw-bold">This action cannot be undone.</p>
+            </div>
+
+            <div class="text-end mt-5">
+                <!-- 按鈕觸發 Modal -->
+                <button type="button" class="btn btn-danger navbar-btn text-white" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                    <i class="fa-solid fa-land-mine-on"></i>&nbsp;&nbsp;Delete&nbsp;&nbsp;
+                </button>
+            </div>
+        </div>
+
+        <!-- ✅ Modal 彈出確認視窗 -->
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="confirmDeleteLabel"><i class="fa-solid fa-triangle-exclamation"></i>&nbsp; Confirm Deletion</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <p>Are you absolutely sure you want to delete your account?</p>
+                        <p class="text-danger fw-bold">All your profile data will be permanently removed.</p>
+                    </div>
+                    <div class="modal-footer justify-content-center">
+                        <form method="POST" autocomplete="off">
+                            {% csrf_token %}
+                            <input type="hidden" name="confirm" value="YES">
+                            <button type="submit" class="btn btn-danger px-4">Yes, delete my account</button>
+                        </form>
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <br><br>
+{% endblock %}

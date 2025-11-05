@@ -1,0 +1,40 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  body {
+    background-color: gray;
+  }
+</style>
+
+
+  <br>
+  <div class="container bg-white shadow-md p-5 form-layout text-center">
+
+    {% if status == "success" %}
+      <i class="fa-solid fa-square-check fa-3x text-success"></i>
+      <br><br>
+      <h3><strong>Your account is now verified</strong></h3>
+      <hr>
+      <p>Please <a href="{% url 'my-login' %}">login</a> to continue.</p>
+
+    {% elif status == "failed" %}
+      <i class="fa-solid fa-circle-exclamation fa-3x text-danger"></i>
+      <br><br>
+      <h3><strong>Email verification failed!</strong></h3>
+      <hr>
+      <p>Please <a href="{% url 'store' %}">contact support</a>.</p>
+
+    {% elif status == "sent" %}
+      <i class="fa-solid fa-envelope-circle-check fa-3x text-primary"></i>
+      <br><br>
+      <h3><strong>Verification email sent!</strong></h3>
+      <hr>
+      <p>Please check your inbox and click the verification link.</p>
+      <p>If you don’t see it, check your spam folder.</p>
+
+    {% endif %}
+  </div>
+
+{% endblock %}

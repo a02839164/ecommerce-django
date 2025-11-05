@@ -1,0 +1,65 @@
+.form-layout{
+
+    border-radius: 20px;
+    width: 550px;    
+    
+}
+
+.disabled-link{
+
+    pointer-events: none; /* 禁用點擊事件 */
+    opacity: 0.5;        /* 視覺上變淡 */
+
+}
+
+.page-item.active .page-link {
+    background-color: #5d6871cd ; /* ← 你想要的底色 */
+    border-color: #343a40 ;
+    color: white ; /* 文字顏色 */
+}
+
+.page-link {
+    background-color: #343a40 ; /* ← 你想要的底色 */
+    border-color: #343a40 ;
+    color: white ; /* 文字顏色 */
+}
+
+.page-link:hover {
+    background-color: #5d6871cd ;/* hover 底色 */
+    color: black ;
+}
+
+.card-img-top {
+    width: 100%;
+    height: 300px;
+    object-fit: cover;
+    object-position: center;
+}
+
+.navbar .nav-link {
+  color: white ;
+  border-radius: 6px;
+  transition: all 0.25s ease-in-out;
+}
+
+.navbar .nav-link:hover {
+  background-color: white ;
+  color: black !important ;
+  border-radius: 6px; /* 讓背景有一點圓角更柔和 */
+}
+
+.cart-btn {
+  background-color: transparent; /* 背景透明 */
+  color: white;                  /* icon 白色 */
+  padding: 8px 8px;
+  border-radius: 5px;
+  text-decoration: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.cart-btn:hover {
+  background-color: white; /* hover 時背景變白 */
+  color: #1d1e1ed7;          /* icon 變主色 */
+}
+
+

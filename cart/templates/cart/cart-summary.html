@@ -1,0 +1,246 @@
+{% include "store/base.html" %}
+
+
+{% load static %}
+{% load mathfilters %}
+
+
+{% block content %}
+
+
+<main class="pt-5">
+    
+    <div class="container">
+      <h1 class="h5"> Shopping cart </h1>
+	  <hr>
+      {% for item in cart %}
+      {% with product=item.product %}
+      <br>
+      <div class="row mb-4 border product-item">
+        
+        <div class="col-md-3 col-lg-2 order-md-first bg-light">
+        
+            <a href="{{product.get_absolute_url}}">
+                <div class="ratio ratio-1x1">
+                    <img class="img-fluid" style="width: 100%; height: auto;" alt="Responsive image" src="{{product.thumbnail.url}}"> <!-- Product image -->
+                </div>
+            </a>                                      
+        
+        </div>
+
+        
+        <div class="col-md-9 col-lg-10 ps-md-3 ps-lg-10">
+          
+          <a href="{{product.get_absolute_url}}" class="text-info text-decoration-none"> <!-- Product get absolute url -->
+          
+            <h1 class="h5 pt-2">{{product.title}}</h1>
+          
+          </a>
+          
+          <div class="border">
+            
+            <div class="col border-bottom">
+              
+                <div class="row p-3">
+              
+                  <div class="col-6"> Product </div>
+                  
+                  <div class="col-6 text-end">
+                    <!-- product-subtotal 用來顯示「小計」；data-unit-price 存放「單價」(未乘 qty) -->
+                    <span class="h6 fw-bold product-subtotal" data-unit-price="{{ product.price }}">
+                        $ {{ product.price|mul:item.qty }}
+                    </span>
+                  </div>
+              </div>
+            
+            </div>
+            
+            <div class="col">
+              
+              <div class="row p-3">
+                
+                <div class="col-12">
+                    <label>Qty</label>
+                        <div class="d-flex align-items-center justify-content-between mt-2 w-100">
+                            
+                            <!-- 數量控制 -->
+                            <div class="input-group input-group-sm" style="width: 100px;">
+                            <button class="btn btn-outline-secondary minus-btn" data-index="{{ product.id }}">−</button>
+                            <input type="text" 
+                                    id="qty{{ product.id }}" 
+                                    class="form-control text-center product-qty" 
+                                    value="{{ item.qty }}" 
+                                    data-index="{{ product.id }}" 
+                                    data-unit-price="{{ product.price }}" 
+                                    min="1" max="99">
+                            <button class="btn btn-outline-secondary plus-btn" data-index="{{ product.id }}">+</button>
+                            </div>
+
+                            <!-- 刪除按鈕 -->
+                            <button type="button" 
+                                    data-index="{{ product.id }}" 
+                                    class="btn btn-danger btn-sm delete-button ms-2">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                        
+              </div>
+        
+            </div>
+    
+          </div>
+    
+        </div>
+      
+    </div>
+
+    {% endwith %}
+    {% endfor %}  
+
+
+      <div class="col-12 text-end">
+        <div class="h6 fw-bold"> Sub total: $ 
+            <div id="total" class="d-inline-flex">{{cart.get_total}}</div>
+        </div>
+        <br>
+        <a href="{% url 'checkout' %}" class="btn btn-primary my-2 checkout-link" id="checkout-link">
+            <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>&nbsp; Check out &nbsp; 
+        </a>
+      </div>
+    </div>
+  <br>
+  <br>
+
+
+ </main>
+
+ 
+<script>
+document.addEventListener('DOMContentLoaded', function() {         // 以下程式會在 HTML 載入完成後才執行
+
+    // 刪除商品（保留你原本的行為：更新 DOM 與顯示總額）
+    $(document).on('click', '.delete-button', function(e){        //選擇整個網頁文件監聽；「點擊」那些匹配的類別元素去執行後面的函數。
+        e.preventDefault();                                      //阻止元素的預設行為
+        //.data('index') = jQuery 讀取 HTML元素 data-index 屬性的方法。
+        const productId = $(this).data('index');                //宣告一個常數變數；將this傳入$()=被點擊的 .delete-button，取得該元素上屬性名稱為 data-index 的值
+
+        $.ajax({
+            type: 'POST',
+            url: '{% url "cart-delete" %}',
+            data: {
+                product_id: productId,
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(json){
+                // 移除該商品 DOM
+                $(`button[data-index="${productId}"]`).closest('.product-item').remove();   //從 <button> 元素中 帶有 data-index 屬性，且值必須剛好等於變數 productId ，向上層找帶有類別 .product-item 的祖先元素，從網頁的 DOM 結構中徹底刪除（包含它裡面的所有內容）。
+                // 更新 header 購物車數量與總金額
+                $('#cart-qty').text(json.qty);
+                $('#total').text(json.total);
+
+
+                const $checkoutLink = $('#checkout-link'); // 再次抓取元素
+                const updated_total_price = parseFloat(json.total); 
+
+                if (updated_total_price <= 0 || isNaN(updated_total_price)) {  // 購物車變成 $0 或空了
+
+                    $checkoutLink.addClass('disabled-link');  // 【動作】禁用 Check out 連結
+                } else {   // 購物車還有金額
+                    
+                    $checkoutLink.removeClass('disabled-link');  // 【動作】啟用 Check out 連結
+                }
+
+
+
+
+
+            }
+        });
+    });
+
+    // + / - 按鈕
+    $(document).on('click', '.plus-btn, .minus-btn', function(e){
+        e.preventDefault();
+
+        const productId = $(this).data('index');
+        const $input = $('#qty' + productId);             //定位到購物車中當前正在操作的那個商品的數量輸入框。(用字串串接的方式，將一個固定的前綴 (#qty) 與商品的唯一 ID (productId) 結合，動態地生成該輸入框的完整ID選擇器)，jQuery 函數 $() 接收到 ID 選擇器後，就會在整個網頁中尋找 ID 為 qty456 的那個 <input> 元素：
+        let currentQty = parseInt($input.val()) || 0;     //從數量輸入框中讀取當前的數值，並轉換為整數（如果輸入框是空或格式錯誤，將數量設為 0）。
+
+        if ($(this).hasClass('plus-btn')) {
+            currentQty++;
+        } else if ($(this).hasClass('minus-btn') && currentQty > 1) {
+            currentQty--;
+        }
+
+        $input.val(currentQty);
+        updateCartQuantity(productId, currentQty, $input);
+    });
+
+    // 直接輸入
+    $(document).on('change', '.product-qty', function(e){
+        const $qtyInput = $(this);
+        const productId = $qtyInput.data('index');
+        let newQty = parseInt($qtyInput.val());
+        if (isNaN(newQty) || newQty < 1) newQty = 1;   //isNaN 檢查 newQty 是否為非數字
+        $qtyInput.val(newQty);
+        updateCartQuantity(productId, newQty, $qtyInput);
+    });
+
+    // AJAX 更新購物車並更新 DOM（使用 data-unit-price 計算小計）
+    function updateCartQuantity(productId, newQty, inputElement) {   // 定義 updateCartQuantity 的 JavaScript 函式接收三個參數 productId, newQty, inputElement
+        $.ajax({
+            type: 'POST',
+            url: '{% url "cart-update" %}',
+            data: {
+                product_id: productId,
+                product_quantity: newQty,
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(json){
+                // 取出單價（從 input 的 data 或從 item row 的 product-subtotal data-unit-price）
+                let unitPrice = parseFloat(inputElement.data('unit-price'));        // 從觸發事件的輸入框 (參數-inputElement) 的 data-unit-price 屬性中讀取單價。使用 parseFloat() 將其轉換為數字（因為價格可能是浮點數）。
+                if (isNaN(unitPrice)) {
+                    // fallback: 從 DOM 上找 product-subtotal 的 data-unit-price
+                    const itemRow = inputElement.closest('.product-item');
+                    unitPrice = parseFloat(itemRow.find('.product-subtotal').data('unit-price'));
+                }
+
+                if (!isNaN(unitPrice)) {
+                    const newSubtotal = (unitPrice * parseInt(newQty)).toFixed(2);  // .toFixed(2)數字轉換為字串，並保留小數點後兩位（四捨五入）
+                    // 更新該產品的小計顯示
+                    inputElement.closest('.product-item').find('.product-subtotal').text('$ ' + newSubtotal);   //更新目標元素的文字內容
+                } else {
+                    // 如果找不到 unitPrice，就直接 reload（保險）
+                    location.reload(true);
+                }
+
+                // 更新 header 購物車數量與總金額（由後端返回）
+                $('#cart-qty').text(json.qty);
+                $('#total').text(json.total);
+
+            },
+            error: function(xhr, errmsg, err){
+                console.error('cart update error', errmsg);
+            }
+        });
+    }
+
+    const $checkoutLink = $('#checkout-link'); 
+    const total_price_initial = parseFloat($('#total').text()); 
+
+    if (total_price_initial <= 0 || isNaN(total_price_initial)) { // 購物車為空或金額為零
+        
+
+        $checkoutLink.addClass('disabled-link'); // 【動作】禁用 Check out 連結
+    } else {  // 購物車有金額
+
+        
+        $checkoutLink.removeClass('disabled-link');  // 【動作】確保 Check out 連結是啟用的
+    }
+
+});
+</script>
+
+{% endblock %}
+

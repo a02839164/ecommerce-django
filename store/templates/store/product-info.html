@@ -1,0 +1,194 @@
+
+{% extends "./base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+
+    <main class="pt-5">
+
+        <div class="row g-3">
+
+
+
+
+            <div class="col-md-5 col-lg-5 order-md-first bg-light p-3">
+                {% if product.image %}
+                <div class="d-flex flex-column align-items-start">
+
+                    <!-- 主圖 -->
+                    <img id="mainImage" src="/media/{{ product.image.0 }}" 
+                        class="img-fluid rounded border" 
+                        style="object-fit: contain; width: 100%; height: 400px;">
+                    <!-- 縮圖 -->
+                    {% if product.image|length > 1 %}
+                        <div class="d-flex flex-wrap mb-3">
+                            {% for img_path in product.image %}
+                                <img src="/media/{{ img_path }}" 
+                                    class="thumbnail me-2 mb-2 border rounded" 
+                                    style="width: 70px; height: 70px; object-fit: cover; cursor: pointer;"
+                                    onclick="document.getElementById('mainImage').src=this.src">
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                    <p class="text-muted text-center mt-5">No image available</p>
+                {% endif %}
+            </div>
+
+
+
+
+
+            <div class="col-md-7 col-lg-7 ps-md-3 ps-lg-5">
+
+                <h1 class="mb-0 h4">{{ product.title }}</h1>
+
+                <strong>{{ product.brand }}</strong>
+                <hr>
+                <br>
+                <p>{{ product.description }}</p>
+
+                <div class="border">
+
+                    <div class="col border-bottom">
+
+                        <div class="row p-3">
+
+                            <div class="col-6"> Price </div>
+
+                            <div class="col-6 text-end"><span class="h4 fw-bold">$ {{ product.price }}</span></div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col">
+              
+                        <div class="row p-3">
+              
+                            <div class="col-6">
+              
+                               <label>Qty</label>
+                                <div class="input-group" style="width:100px;">
+                                    <button class="btn btn-outline-secondary btn-sm minus-btn">−</button>
+                                    <input type="text" id="product-qty" class="form-control text-center" inputmode="numeric" pattern="[0-9]*" value="1" min="1" max="99">
+                                    <button class="btn btn-outline-secondary btn-sm plus-btn">+</button>
+                                </div>
+                                <!-- <label for="select">Qty</label>
+                                &nbsp; 
+                                <select id="select">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select> -->
+                            </div>
+
+                            <div class="col-6 text-end">
+                                
+                                <button type="button" id="add-button" value="{{ product.id }}" class="btn btn-secondary btn-sm">
+                        
+                                Add to cart 
+                            
+                                </button> 
+                            
+
+                            </div>
+                        
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <br>
+
+</div>
+
+<!-- <script>
+
+    $(document).on('click', '#add-button', function(e){
+        e.preventDefault();
+
+        $.ajax({
+
+            type: 'POST' , 
+            url: '{% url "cart-add" %}' , 
+            data:{
+
+                product_id : $('#add-button').val(), 
+                product_quantity: $('#select option:selected').text(),
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+                action: 'post', 
+            },
+            success: function(json){
+                
+                document.getElementById('cart-qty').textContent = json.qty
+
+            },
+            error: function(xhr, errmsg, err){
+            }
+        });
+    })
+
+</script> -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {   // 以下程式會在 HTML 載入完成後才執行
+
+    // + / − 按鈕
+    $(document).on('click', '.plus-btn, .minus-btn', function(e){       //選擇整個網頁文件監聽；「點擊」那些匹配的類別元素去執行後面的函數。
+        e.preventDefault();                                             //阻止元素的預設行為
+        const $input = $('#product-qty');      //宣告一個變數 input，存放 ID 為 product-qty 的 DOM 元素
+        let currentQty = parseInt($input.val()) || 1;  //讀取 <input> 的值轉成整數，如果 parseInt 失敗（例如輸入了空字串或非數字） 就把數量預設為 1
+
+        if ($(this).hasClass('plus-btn')) {   //選取使用者點擊的按鈕，檢查元素是否有 class plus-btn
+            currentQty++;
+        } else if ($(this).hasClass('minus-btn') && currentQty > 1) {
+            currentQty--;
+        }
+
+        $input.val(currentQty);                           // 把 currentQty 寫回輸入框
+    });
+
+    // Add to cart 按鈕
+    $(document).on('click', '#add-button', function(e){
+        e.preventDefault();
+
+        const productId = $(this).val();                                //確認使用者點擊的是哪個產品
+        const productQty = parseInt($('#product-qty').val()) || 1;     //拿到目前輸入框的值轉成整數；之後要送到後端加入購物車的數量
+ 
+        $.ajax({
+            type: 'POST',
+            url: '{% url "cart-add" %}',
+            data: {
+                product_id: productId,
+                product_quantity: productQty,
+                csrfmiddlewaretoken: "{{ csrf_token }}",
+            },
+            success: function(json){
+                // 更新 header 購物車數量
+                $('#cart-qty').text(json.qty);
+                // 可加入提示，例如 alert("已加入購物車") 或小動畫
+            },
+            error: function(xhr, errmsg, err){
+                console.error('Add to cart failed', errmsg);
+            }
+        });
+    });
+
+});
+</script>
+
+
+
+{% endblock %}

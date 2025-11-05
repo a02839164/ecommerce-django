@@ -1,0 +1,33 @@
+{% extends 'store/base.html' %}
+
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block content %}
+<style>
+    body{
+
+        background-color: gray;
+
+    }
+
+</style>
+
+<body>
+
+    <br>
+
+    <div class="container bg-white shadow-md p-5 form-layout">
+        <div class="text-center">
+            <i class="text-danger fa fa-credit-card-alt fa-4x" aria-hidden="true"></i>
+        <br>
+        <br>
+
+        <h3><strong>  Payment failed </strong></h3>
+        <hr>
+        <h5>   Your order was not processed  . </h5>
+        </div>
+    </div>
+</body>
+
+{% endblock content %}

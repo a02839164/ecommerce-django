@@ -1,0 +1,287 @@
+
+{% include "store/base.html" %}
+
+
+{% load static %}
+
+
+{% block content %}
+
+<style>
+    
+    body 
+    {
+        
+        background-color: gray;
+    
+    }
+
+
+</style>
+
+
+    <body>
+
+        <br>
+
+        <div class="container bg-white shadow-md p-5" style="width:500px; border-radius:20px;">
+
+            <form id="form" onsubmit="event.preventDefault();">
+                <div>
+                    <div style="display: flex; align-items: center; justify-content: center; position: relative;">
+                        <a href="{% url 'cart-summary' %}" style="position: absolute; left: 0; color: #717070c8;">
+                            <i class="fa fa-undo fa-2x" aria-hidden="true"></i>
+                        </a>
+                        <h3 style="margin: 0;">Complete your order</h3>
+                    </div>
+                    <hr>
+                    <p> Please enter in the shipping address below. </p>
+                    <br>
+                    <div class="form-field">
+                    
+                        <input class="form-control validate" id="name" type="text" placeholder="Full name*" autocomplete="off" value="{{shipping.full_name}}" required>
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control validate" id="email" type="email" placeholder="Email address*" autocomplete="off" value="{{shipping.email}}" required>
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control validate" id="address1" type="text" placeholder="Address 1*" autocomplete="off" value="{{shipping.address1}}" required>
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control validate" id="address2" type="text" placeholder="Address 2*" autocomplete="off" value="{{shipping.address2}}" required>
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control validate" id="city" type="text" placeholder="City*" autocomplete="off" value="{{shipping.city}}" required>
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control" id="state" type="text" placeholder="State (Optional)" autocomplete="off" value="{{shipping.state}}">
+
+                    </div>
+                    <br>
+                    <div class="form-field">
+
+                        <input class="form-control" id="zipcode" type="text" placeholder="Zip code (Optional)" autocomplete="off" value="{{shipping.zipcode}}">
+
+                    </div>
+                </div>
+                <br>
+                <br>
+                <!-- Paypal  -->
+                <div id="paypal-button-container"></div>
+                 <script src="https://www.paypal.com/sdk/js?client-id=AfQicZXVD-nvuVqN_Kay0_ZAlAv5Xyp0L-oqAcmqW0iKkSm2_zhQY9ZgmCuK38QjL8trIB9s7DaLXIKH&currency=USD&intent=capture&enable-funding=venmo" data-sdk-integration-source="integrationbuilder"></script>
+            </form>
+
+        </div>
+
+        <br>
+
+    </body>
+
+
+    <!-- Ajax integration -->
+
+    
+
+<script>
+
+// Total price
+// const total_price = "{{cart.get_total}}" ;
+
+
+// Paypal Script
+
+const myPaypalButton = paypal.Buttons({         
+        // https://developer.paypal.com/docs/checkout/standard/customize/buttons-style-guide/
+        style: {
+        color: "blue",
+        shape: "rect",
+        layout: "vertical"
+        },
+
+        onInit: function(data, actions) {           // 初始化完成時應執行...
+
+            actions.disable();                      // 禁用按鈕
+
+            function checkInputs(){
+
+                let order_verified = 'Yes';        //宣告一個變數 order_verified，並給它初始值 'Yes' 預設「訂單驗證狀態為通過」
+
+                $(':input[required]').each(function(){ // 選取所有的表單輸入元素 + 有屬性 required(必填)，對欄位逐一執行...
+                    if($(this).val() == ''){          // 如果找到任何一個空欄位，就會執行...
+                        order_verified = 'No'
+                        return false
+
+                    }
+                });
+
+                if (order_verified == 'Yes'){
+
+                    actions.enable();
+                }else {
+
+                    actions.disable();
+                }
+            }
+
+            checkInputs();
+
+            document.querySelectorAll('.validate').forEach(item =>{ // 找出 HTML 中所有 class 為 validate 的元素， 針對每一個元素命名為 item，執行...
+
+                item.addEventListener('input', checkInputs);       // 對每一個item加上事件監聽器（ input - 欄位內容實際改變）。 並在事件發生時執行...
+
+            });
+        },
+
+
+
+        // set up the transaction   版本一
+        // createOrder: (data, actions) => {                                                       //使用者點擊 PayPal 按鈕建立訂單
+        //     // pass in any options from the v2 orders create call:
+        //     // https://developer.paypal.com/api/orders/v2/#orders-create-request-body
+        //     const createOrderPayload = {                                                        //建立訂單資料物件 createOrderPayload
+        //         purchase_units: [
+        //             {
+        //                 amount: {
+        //                     value: total_price
+        //                 }
+        //             }
+        //         ]
+        //     };
+
+        //     return actions.order.create(createOrderPayload);                                    //回傳給 PayPal   actions.order.create() 將訂單送回給 PayPal
+        // },
+
+        ////版本二////
+        createOrder: () => {       
+            return $.ajax({
+                type : 'POST',
+                url  : '{% url "create-paypal-order" %}',
+                data :{csrfmiddlewaretoken: '{{ csrf_token }}'},
+            }).then(json => json.id);                                   
+                               
+        },        
+
+
+
+
+
+
+        // finalize the transaction 版本一
+        // onApprove: (data, actions) => {                             //使用者完成付款並授權 PayPal 扣款後，發起訂單「捕獲 (Capture)」的請求
+        //     const captureOrderHandler = (details) => {              //定義一個 captureOrderHandler函式，裡面存 (details)，執行後面 { ... } 的程式
+        //         console.log('Transaction completed');
+                
+        //         //Ajax functionality
+        //         $.ajax({
+        //             type: 'POST' , 
+        //             url: '{% url "complete-order" %}' , 
+        //             data:{
+
+        //                 name: $('#name').val(),
+        //                 email: $('#email').val(),
+        //                 address1: $('#address1').val(),
+        //                 address2: $('#address2').val(),
+        //                 city: $('#city').val(),
+        //                 state: $('#state').val(),
+        //                 zipcode: $('#zipcode').val(),
+
+        //                 //PayPal order details
+        //                 paypal_order_id: data.orderID,
+        //                 payer_id:data.payerID,
+        //                 payment_status:details.status,
+                        
+
+        //                 csrfmiddlewaretoken: "{{ csrf_token }}",
+        //             },
+        //             success: function(json){
+
+        //                 window.location.replace("{% url 'payment-success' %}");
+
+        //             },
+        //             error: function(xhr, errmsg, err){
+
+        //                 window.location.replace("{% url 'payment-failed' %}");
+
+        //             }
+        //         });
+
+        //     };
+
+        //     return actions.order.capture().then(captureOrderHandler);       // 執行執行非同步扣款，返回 Promise，款項捕獲成功後； .then執行我們自定義 captureOrderHandler 函式，將詳細交易資訊（details）傳遞後端
+        // },                                                                 //如果 AJAX 請求成功導向到一個「付款成功」的頁面；AJAX 請求失敗，導向到一個「付款失敗/錯誤」的頁面
+
+        //////版本二//////
+        onApprove: (data) => {                         
+            return $.ajax({
+                type: 'POST' , 
+                url: '{% url "capture-paypal-order" %}' , 
+                data:{
+                    csrfmiddlewaretoken: "{{ csrf_token }}",
+                    order_id : data.orderID,
+
+                    name: $('#name').val(),
+                    email: $('#email').val(),
+                    address1: $('#address1').val(),
+                    address2: $('#address2').val(),
+                    city: $('#city').val(),
+                    state: $('#state').val(),
+                    zipcode: $('#zipcode').val(),         
+                },
+
+            })
+            .done(()=>{
+                window.location.replace("{% url 'payment-success' %}");
+            })
+            .fail((jqXHR, textStatus, errorThrown)=>{
+                console.log(textStatus);
+                console.log(errorThrown);
+                console.log(jqXHR.status);
+                console.log(jqXHR.responseText);
+                window.location.replace("{% url 'payment-failed' %}");
+
+            })
+            
+
+        },
+
+
+
+
+
+
+
+        // handle unrecoverable errors
+        onError: (err) => {                                                                //嚴重Error： 發生在用戶點擊按鈕、進入結帳流程後，但交易過程中發生了不可恢復的錯誤。這個錯誤發生時，通常連 onApprove 裡面的邏輯都還沒開始執行。
+            console.error('An error prevented the buyer from checking out with PayPal');
+
+        }
+    });
+
+    myPaypalButton                                                              // 最前面建立的 PayPal 按鈕實例；包含了所有 callback（createOrder、onApprove、onError）和樣式設定
+        .render("#paypal-button-container")                                             //  把按鈕插入到頁面上指定的 DOM 元素 (HTML 元素的 CSS 選擇器)
+        .catch((err) => {                                                               //如果按鈕渲染失敗（例如網路問題、PayPal SDK 載入失敗）.catch() 會捕捉錯誤，並執行裡面的程式
+            console.error('PayPal Buttons failed to render');
+        });
+
+
+
+</script>
+
+
+
+{% endblock %}

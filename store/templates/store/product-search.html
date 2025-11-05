@@ -1,0 +1,124 @@
+{% extends "./base.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<style>
+
+.btn-outline-secondary:hover {
+  background-color: #2e3e5667;
+  border-color: #2e3e5661;
+  color: white;
+}
+</style>
+
+<div class="container py-4" style="max-width: 1400px;">
+    <!-- 搜尋標題 -->
+    <h4>Search results for: <span class="text-primary">"{{ query }}"</span></h4>
+    <hr>
+    
+    <!-- 若有結果，顯示第一個商品的類別 -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            {% if selected_category %}
+                {% for c in categories %}
+                    {% if c.id|stringformat:"s" == selected_category %}
+                        <p class="text-muted mb-4">
+                            Category: <span class="fw-bold">{{ c.name|capfirst }}</span>
+                        </p>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>            
+        <!-- 顯示搜尋結果 -->
+
+        <form method="get" action="{% url 'product-search' %}" class="d-flex justify-content-end align-items-center mb-4">
+            <input type="hidden" name="q" value="{{ query }}">
+            {% if selected_category %}
+                <input type="hidden" name="category" value="{{ selected_category }}">
+            {% endif %}
+
+            <label for="sort" class="me-2 fw-bold">Sort by:</label>
+            <select name="sort" id="sort" class="form-select w-auto" onchange="this.form.submit()">
+                <option value="relevance" {% if sort_by == 'relevance' %}selected{% endif %}>Relevance</option>
+                <option value="price_low" {% if sort_by == 'price_low' %}selected{% endif %}>Price: Low → High</option>
+                <option value="price_high" {% if sort_by == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+            </select>
+        </form>
+    </div>
+    {% if page_obj %}
+        <div class="row row-cols-2 row-cols-sm-3 row-cols-md-5 row-cols-lg-6 g-3">
+            {% for product in page_obj %}
+                <div class="col">
+                    <div class="card h-100 shadow-sm product-card">
+                        <a href="{{ product.get_absolute_url }}" class="text-decoration-none">
+                            {% if product.thumbnail %}
+                                <img src="{{ product.thumbnail.url }}" 
+                                        class="card-img-top" 
+                                        alt="{{ product.title }}"
+                                        style="object-fit: cover; width: 100%; height: 100%;">
+                            {% else %}
+                                <img class="card-img-top" src="" alt="{{ product.title }}">
+                            {% endif %}
+                        </a>
+                        <div class="card-body p-2 text-center" style="min-height: 70px;">
+                            <p class="card-text mb-1" style="font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                <a href="{{ product.get_absolute_url }}" class="text-info text-decoration-none">
+                                    {{ product.title }}
+                                </a>
+                            </p>
+                            <h6 class="fw-bold mb-0" style="font-size: 0.9rem;">$ {{ product.price }}</h6>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+       {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center mt-4 flex-wrap gap-2">
+                    {% if page_obj.has_previous %}
+                        <li>
+                            <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                            href="?q={{ query }}&category={{ selected_category }}&sort={{ sort_by }}&page={{ page_obj.previous_page_number }}">
+                                ← Prev
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% with start_page=page_obj.number|add:"-5" end_page=page_obj.number|add:"5" %}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num >= start_page and num <= end_page %}
+                                {% if page_obj.number == num %}
+                                    <li>
+                                        <span class="btn btn-primary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li>
+                                        <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                                        href="?q={{ query }}&category={{ selected_category }}&sort={{ sort_by }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
+
+                    {% if page_obj.has_next %}
+                        <li>
+                            <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                            href="?q={{ query }}&category={{ selected_category }}&sort={{ sort_by }}&page={{ page_obj.next_page_number }}">
+                                Next →
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-warning text-center" role="alert">
+            No products found matching your search.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}

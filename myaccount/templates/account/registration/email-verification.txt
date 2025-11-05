@@ -1,0 +1,8 @@
+Hi {{ user.username }},
+
+Thank you for registering on our website.
+
+Please verify your email by clicking the link below:
+{{ activation_link }}
+
+If you didn’t register, please ignore this email.
