@@ -43,8 +43,8 @@
                     {% for item in entry.items %}
                         <div style="display: flex; align-items: center; margin-bottom: 15px;">
                             <!-- 商品圖片 -->
-                            {% if item.product.image %}
-                                <img src="{{ item.product.image.url }}" alt="{{ item.product.title }}" 
+                            {% if item.product.thumbnail %}
+                                <img src="{{ item.product.thumbnail.url }}" alt="{{ item.product.title }}" 
                                     style="width: 130px; height: 130px; object-fit: cover; border-radius: 8px; margin-right: 15px;">
                             {% else %}
                                 <img src="{% static 'images/no-image.png' %}" alt="No image"

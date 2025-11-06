@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from google.oauth2 import service_account
 import environ
 
 # Django environ setup
@@ -147,84 +148,44 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [BASE_DIR/'static']
 
-MEDIA_URL = '/media/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'       # 先使用本地 ，等之後反向代理再上線 + urls.py urlpatterns += static
 
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / "media"   #保留 本地暫存／上傳來源
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email configuration settings:
 
+# Email configuration settings:
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = '587'
 EMAIL_USE_TLS = True
-
 # Be sure to read the guide in the resources folder of this lecture (SETUP THE EMAIL BACKEND)
-
 EMAIL_HOST_USER = env("EMAIL_HOST_USER")                        # Enter your GMAIL address
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")                  # Enter your app password
 
 
-# AWS configuration
 
-'''
-AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-'''
-# Amazon  S3 Interation 
-'''
-AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")  # - Enter your S3 bucket name HERE
 
-#Django 4.2 > Storage configuration for S3
+# (Database) configuration settings:
 
-STORAGE = {
-
-    # Media file (image) management
-
-    "default": {
-
-        "BACKEND":"storages.backends.s3boto3.S3StaticStorage",
-
-    },
-
-    # CSS and JS file management
-
-    "staticfiles": {
-
-        "BACKEND":"storages.backends.s3boto3.S3StaticStorage",
-    
-    },
-
-}
-
-AWS_S3_CUSTOM_DOMAIN = f"{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com"
-AWS_S3_FILE_OVERWRITE = False
-'''
-# RDS (Database) configuration settings:
-'''
 DATABASES = {
 
     'default':{
     
         'ENGINE' : 'django.db.backends.postgresql',
-
         'NAME' : env("DB_NAME"),
-
         'USER' : env("DB_USER"),
-
         'PASSWORD' : env("DB_PASSWORD"),
-
         'HOST' : env("DB_HOST"),
-
         'PORT' : '5432', 
     }
 }
 
-'''
+
 
 # PayPal settings
 PAYPAL_SANDBOX_MODE = True
@@ -244,4 +205,31 @@ REST_FRAMEWORK = {
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET')
 GOOGLE_REDIRECT_URI = 'http://127.0.0.1:8000/account/google/callback/'
+
+
+
+
+GS_BUCKET_NAME = env("GS_BUCKET_NAME")
+GOOGLE_APPLICATION_CREDENTIALS = env("GOOGLE_APPLICATION_CREDENTIALS")
+
+
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.gcloud.GoogleCloudStorage",
+        "OPTIONS": {
+            "bucket_name": env("GS_BUCKET_NAME"),
+            "credentials": service_account.Credentials.from_service_account_file(
+                BASE_DIR / env("GOOGLE_APPLICATION_CREDENTIALS")
+            ),
+            "querystring_auth": False,
+            "default_acl": None,
+        },      
+    },
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",}
+}
+
+MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
+
+
 
