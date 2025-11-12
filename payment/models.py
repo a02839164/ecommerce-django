@@ -43,6 +43,10 @@ class Order(models.Model):
 
     shipping_address = models.TextField(max_length=1000)
 
+    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)     
+    
+    shipping_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0) 
+
     amount_paid = models.DecimalField(max_digits=8, decimal_places=2)
 
     date_ordered = models.DateTimeField(auto_now_add=True)

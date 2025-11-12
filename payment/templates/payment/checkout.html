@@ -99,10 +99,6 @@
 
 <script>
 
-// Total price
-// const total_price = "{{cart.get_total}}" ;
-
-
 // Paypal Script
 
 const myPaypalButton = paypal.Buttons({         
@@ -148,25 +144,6 @@ const myPaypalButton = paypal.Buttons({
         },
 
 
-
-        // set up the transaction   版本一
-        // createOrder: (data, actions) => {                                                       //使用者點擊 PayPal 按鈕建立訂單
-        //     // pass in any options from the v2 orders create call:
-        //     // https://developer.paypal.com/api/orders/v2/#orders-create-request-body
-        //     const createOrderPayload = {                                                        //建立訂單資料物件 createOrderPayload
-        //         purchase_units: [
-        //             {
-        //                 amount: {
-        //                     value: total_price
-        //                 }
-        //             }
-        //         ]
-        //     };
-
-        //     return actions.order.create(createOrderPayload);                                    //回傳給 PayPal   actions.order.create() 將訂單送回給 PayPal
-        // },
-
-        ////版本二////
         createOrder: () => {       
             return $.ajax({
                 type : 'POST',
@@ -180,52 +157,6 @@ const myPaypalButton = paypal.Buttons({
 
 
 
-
-        // finalize the transaction 版本一
-        // onApprove: (data, actions) => {                             //使用者完成付款並授權 PayPal 扣款後，發起訂單「捕獲 (Capture)」的請求
-        //     const captureOrderHandler = (details) => {              //定義一個 captureOrderHandler函式，裡面存 (details)，執行後面 { ... } 的程式
-        //         console.log('Transaction completed');
-                
-        //         //Ajax functionality
-        //         $.ajax({
-        //             type: 'POST' , 
-        //             url: '{% url "complete-order" %}' , 
-        //             data:{
-
-        //                 name: $('#name').val(),
-        //                 email: $('#email').val(),
-        //                 address1: $('#address1').val(),
-        //                 address2: $('#address2').val(),
-        //                 city: $('#city').val(),
-        //                 state: $('#state').val(),
-        //                 zipcode: $('#zipcode').val(),
-
-        //                 //PayPal order details
-        //                 paypal_order_id: data.orderID,
-        //                 payer_id:data.payerID,
-        //                 payment_status:details.status,
-                        
-
-        //                 csrfmiddlewaretoken: "{{ csrf_token }}",
-        //             },
-        //             success: function(json){
-
-        //                 window.location.replace("{% url 'payment-success' %}");
-
-        //             },
-        //             error: function(xhr, errmsg, err){
-
-        //                 window.location.replace("{% url 'payment-failed' %}");
-
-        //             }
-        //         });
-
-        //     };
-
-        //     return actions.order.capture().then(captureOrderHandler);       // 執行執行非同步扣款，返回 Promise，款項捕獲成功後； .then執行我們自定義 captureOrderHandler 函式，將詳細交易資訊（details）傳遞後端
-        // },                                                                 //如果 AJAX 請求成功導向到一個「付款成功」的頁面；AJAX 請求失敗，導向到一個「付款失敗/錯誤」的頁面
-
-        //////版本二//////
         onApprove: (data) => {                         
             return $.ajax({
                 type: 'POST' , 

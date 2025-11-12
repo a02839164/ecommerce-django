@@ -7,11 +7,21 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
 
+from decimal import Decimal
+
 def cart_summary(request):
 
     cart = Cart(request)
-    context= {'cart':cart}            
+    shipping_fee = cart.get_shipping_fee()
+    grand_total = Decimal(cart.get_total()) + shipping_fee
+    context= {
+        'cart':cart,
+        'shipping_fee': shipping_fee,
+        'grand_total': grand_total
+    }            
+
     return render(request, 'cart/cart-summary.html', context)
+
 
 @require_POST
 def cart_add(request):
@@ -34,16 +44,20 @@ def cart_add(request):
 def cart_delete(request):
 
     cart = Cart(request)
-
-
     product_id = int(request.POST.get('product_id'))
-
     cart.delete(product = product_id)
 
     cart_quantity = cart.__len__()
-    cart_total = cart.get_total()
+    subtotal = cart.get_total()
+    shipping_fee = cart.get_shipping_fee()
+    grand_total = subtotal + shipping_fee
 
-    return JsonResponse({'qty':cart_quantity,'total':cart_total})
+    return JsonResponse({
+        'qty': cart_quantity,
+        'subtotal': str(subtotal),
+        'shipping_fee': str(shipping_fee),
+        'grand_total': str(grand_total),
+    })
 
 
 
@@ -58,6 +72,14 @@ def cart_update(request):
     cart.update(product = product_id, qty = product_quantity)
 
     cart_quantity = cart.__len__()
-    cart_total = cart.get_total()
+    subtotal = cart.get_total()
+    shipping_fee = cart.get_shipping_fee()
+    grand_total = subtotal + shipping_fee
 
-    return JsonResponse({'qty':cart_quantity,'total':cart_total})
+    return JsonResponse({
+        'qty': cart_quantity,
+        'subtotal': str(subtotal),
+        'shipping_fee': str(shipping_fee),
+        'grand_total': str(grand_total),
+        
+        })

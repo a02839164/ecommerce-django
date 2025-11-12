@@ -99,15 +99,26 @@
     {% endfor %}  
 
 
-      <div class="col-12 text-end">
-        <div class="h6 fw-bold"> Sub total: $ 
-            <div id="total" class="d-inline-flex">{{cart.get_total}}</div>
+        <div class="col-12 text-end">
+            <div class="h6 fw-bold mb-1">
+                Subtotal: $ 
+                <span id="subtotal">{{ cart.get_total }}</span>
+            </div>
+
+            <div class="h6 mb-1">
+                Shipping: $ 
+                <span id="shipping-fee">{{ shipping_fee }}</span>
+            </div>
+            <hr>
+            <div class="h5 fw-bold text-danger">
+                Total: $ 
+                <span id="grand-total">{{ grand_total }}</span>
+            </div>
+
+            <a href="{% url 'checkout' %}" class="btn btn-primary my-3 checkout-link" id="checkout-link">
+                <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>&nbsp; Check out
+            </a>
         </div>
-        <br>
-        <a href="{% url 'checkout' %}" class="btn btn-primary my-2 checkout-link" id="checkout-link">
-            <i class="fa fa-chevron-circle-right" aria-hidden="true"></i>&nbsp; Check out &nbsp; 
-        </a>
-      </div>
     </div>
   <br>
   <br>
@@ -137,11 +148,13 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
                 $(`button[data-index="${productId}"]`).closest('.product-item').remove();   //從 <button> 元素中 帶有 data-index 屬性，且值必須剛好等於變數 productId ，向上層找帶有類別 .product-item 的祖先元素，從網頁的 DOM 結構中徹底刪除（包含它裡面的所有內容）。
                 // 更新 header 購物車數量與總金額
                 $('#cart-qty').text(json.qty);
-                $('#total').text(json.total);
+                $('#subtotal').text(json.subtotal);
+                $('#shipping-fee').text(json.shipping_fee);
+                $('#grand-total').text(json.grand_total);
 
 
                 const $checkoutLink = $('#checkout-link'); // 再次抓取元素
-                const updated_total_price = parseFloat(json.total); 
+                const updated_total_price = parseFloat(json.subtotal); 
 
                 if (updated_total_price <= 0 || isNaN(updated_total_price)) {  // 購物車變成 $0 或空了
 
@@ -217,7 +230,9 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
 
                 // 更新 header 購物車數量與總金額（由後端返回）
                 $('#cart-qty').text(json.qty);
-                $('#total').text(json.total);
+                $('#subtotal').text(json.subtotal);
+                $('#shipping-fee').text(json.shipping_fee);
+                $('#grand-total').text(json.grand_total);
 
             },
             error: function(xhr, errmsg, err){
@@ -227,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
     }
 
     const $checkoutLink = $('#checkout-link'); 
-    const total_price_initial = parseFloat($('#total').text()); 
+    const total_price_initial = parseFloat($('#subtotal').text()); 
 
     if (total_price_initial <= 0 || isNaN(total_price_initial)) { // 購物車為空或金額為零
         
