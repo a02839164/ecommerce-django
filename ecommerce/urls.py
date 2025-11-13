@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
-
+from shipping.webhook import shippo_webhook
 urlpatterns = [
     #Admin url
     path('admin/', admin.site.urls),
@@ -15,7 +15,8 @@ urlpatterns = [
     #Payment app
     path('payment/',include('payment.urls')),
     
-
+    #Webhook URL
+    path('webhooks/shippo/',shippo_webhook , name="shippo-webhook"),
     
 ]
 

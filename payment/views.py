@@ -14,6 +14,9 @@ from django.contrib.auth.decorators import login_required
 from .payment_services.paypal_service import PaypalService
 from decimal import Decimal
 
+from shipping.api import create_shipment, buy_shipping_label, shippo_start_tracking
+from django.utils import timezone
+
 
 @login_required(login_url='my-login')
 def checkout(request):
@@ -162,6 +165,36 @@ def capture_paypal_order(request):
                     price= item['price'],
                     user = request.user
                 )
+
+            try:
+                # Step 1: 建立 Shipment（Shippo 回傳 rates）
+                shipment_res = create_shipment(order, address1, address2, city, state, zipcode)
+
+                if shipment_res.get("rates"):
+    
+                    #找到 USPS
+                    rate = next((r for r in shipment_res["rates"] if r["provider"] == "USPS"), None)
+
+
+                    # Step 2: 購買 label（Shippo 回傳 tracking number）
+                    label_res = buy_shipping_label(rate["object_id"])
+
+
+
+                    # Step 3: 寫入 order
+                    order.tracking_number = label_res.get("tracking_number")
+                    order.shipping_carrier = rate.get("provider")
+                    order.shipping_status = label_res.get("tracking_status", "UNKNOWN")
+                    order.tracking_updated_at = timezone.now()
+                    order.save()
+                    
+                    # Step 4: 啟動 Shippo Tracking 模擬
+                    shippo_start_tracking(order.tracking_number)
+
+            except Exception as e:
+
+                print("Shippo API error:", e)
+
 
 
         return JsonResponse({'success': True})

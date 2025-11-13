@@ -47,6 +47,39 @@
         <div><i class="fa fa-map-marker" aria-hidden="true"></i>&nbsp;Shipping Address:
           {{ entry.order.shipping_address }}
         </div>
+          <!-- 🚚 新增物流資訊 -->
+        <div style="margin-top: 10px; margin-left: 25px;">
+          <p class="mb-1"><strong>物流公司：</strong>
+            {{ entry.order.shipping_carrier }}
+          </p>
+
+          <p class="mb-1"><strong>追蹤編號：</strong>
+            {% if entry.order.tracking_number %}
+              {{ entry.order.tracking_number }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+
+          <p class="mb-1">
+            <strong>物流狀態：</strong>
+            {% if entry.order.shipping_status %}
+              {{ entry.order.shipping_status }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+
+          <p class="mb-1">
+            <strong>最後更新：</strong>
+            {% if entry.order.tracking_updated_at %}
+              {{ entry.order.tracking_updated_at|date:"Y-m-d H:i" }}
+            {% else %}
+              —
+            {% endif %}
+          </p>
+        </div>
+
         <hr>
 
         <!-- 商品項目 -->

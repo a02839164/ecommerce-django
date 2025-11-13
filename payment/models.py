@@ -59,6 +59,12 @@ class Order(models.Model):
     payer_id = models.CharField(max_length=255, null=True, blank=True)
     payment_status = models.CharField(max_length=50, null=True, blank=True)    
 
+    # update shipping
+    shipping_carrier = models.CharField(max_length=50, blank=True, null=True)
+    shipping_status = models.CharField(max_length=50, blank=True, null=True)
+    tracking_number = models.CharField(max_length=50, blank=True, null=True)
+    shipped_at = models.DateTimeField(blank=True, null=True)
+    tracking_updated_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
 
