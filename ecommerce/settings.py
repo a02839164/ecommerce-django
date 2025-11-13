@@ -237,3 +237,16 @@ MEDIA_URL = f"https://storage.googleapis.com/{GS_BUCKET_NAME}/"
 
 
 
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}

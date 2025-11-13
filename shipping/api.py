@@ -82,12 +82,14 @@ def buy_shipping_label(rate_id):
 
 def shippo_start_tracking(tracking_number):
 
-    url = f"https://api.goshippo.com/tracks/usps/{tracking_number}"
-
+    url = "https://api.goshippo.com/tracks/"
+    
     headers = {
-
-        "Authorization": f"ShippoToken {settings.SHIPPO_API_KEY}"
-
+        "Authorization": f"ShippoToken {settings.SHIPPO_API_KEY}",
+        "Content-Type": "application/json",
     }
-
-    return requests.get(url, headers=headers)
+    data = {
+        "carrier": "usps",
+        "tracking_number": tracking_number
+    }
+    return requests.post(url, json=data, headers=headers)
