@@ -1,7 +1,6 @@
 import requests
 from django.conf import settings
-
-
+import json
 
 def get_order_weight(order):
     
@@ -82,22 +81,24 @@ def buy_shipping_label(rate_id):
 
 
 
-def register_test_tracking(tracking_number, carrier="usps"):
-    """
-    啟動 Shippo Tracking（新版 API 用 GET）
-    Test mode 下：GET=啟動模擬 tracking + Register webhook
-    """
+def simulate_fake_webhook(tracking_number):
 
-    url = f"https://api.goshippo.com/tracks/{carrier}/{tracking_number}"
+    
+    """ 模擬自己 POST Webhook 給後端，用於測試流程 """
+    url = f"https://buyriastore.com/webhooks/shippo/?token={settings.SHIPPO_WEBHOOK_TOKEN}"
 
-    headers = {
-        "Authorization": f"Shippo Token {settings.SHIPPO_API_KEY}",
-        "Content-Type": "application/json"
+    payload = {
+        "tracking_number": tracking_number,
+        "tracking_status": {
+            "status": "DELIVERED",
+            "status_details": "Fake: Package delivered (simulated)",
+        },
+        "carrier": "usps",
+        "test": True
     }
 
-    response = requests.get(url, headers=headers)
+    headers = {"Content-Type": "application/json"}
 
-    # Debug 用的，可寫 log
-    print("Shippo tracking init response:", response.status_code, response.text)
+    res = requests.post(url, headers=headers, data=json.dumps(payload))
 
-    return response
+    return res
