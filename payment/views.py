@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from .payment_services.paypal_service import PaypalService
 from decimal import Decimal
 
-from shipping.api import create_shipment, buy_shipping_label, shippo_start_tracking
+from shipping.api import create_shipment, buy_shipping_label, register_test_tracking
 from django.utils import timezone
 
 
@@ -189,7 +189,7 @@ def capture_paypal_order(request):
                     order.save()
                     
                     # Step 4: 啟動 Shippo Tracking 模擬
-                    shippo_start_tracking(order.tracking_number)
+                    register_test_tracking(order.tracking_numberㄝ, order.shipping_carrier)
 
             except Exception as e:
 

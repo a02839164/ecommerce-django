@@ -80,16 +80,24 @@ def buy_shipping_label(rate_id):
     return response.json()
 
 
-def shippo_start_tracking(tracking_number):
 
-    url = "https://api.goshippo.com/tracks/"
-    
+
+def register_test_tracking(tracking_number, carrier="usps"):
+    """
+    啟動 Shippo Tracking（新版 API 用 GET）
+    Test mode 下：GET=啟動模擬 tracking + Register webhook
+    """
+
+    url = f"https://api.goshippo.com/tracks/{carrier}/{tracking_number}"
+
     headers = {
-        "Authorization": f"ShippoToken {settings.SHIPPO_API_KEY}",
-        "Content-Type": "application/json",
+        "Authorization": f"Shippo Token {settings.SHIPPO_API_KEY}",
+        "Content-Type": "application/json"
     }
-    data = {
-        "carrier": "usps",
-        "tracking_number": tracking_number
-    }
-    return requests.post(url, json=data, headers=headers)
+
+    response = requests.get(url, headers=headers)
+
+    # Debug 用的，可寫 log
+    print("Shippo tracking init response:", response.status_code, response.text)
+
+    return response
