@@ -9,7 +9,6 @@ from paypalcheckoutsdk.payments import CapturesRefundRequest
 #建立API連線客戶端
 class PaypalClient:
 
-
     def __init__(self):
         
         environment = SandboxEnvironment(

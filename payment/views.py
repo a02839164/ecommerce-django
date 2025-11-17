@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 
 from django.contrib.auth.decorators import login_required
 
-from .payment_services.paypal_service import PaypalService
+from paypal.services.paypal_service import PaypalService
 from decimal import Decimal
 
 from shipping.api import create_shipment, buy_shipping_label, simulate_fake_webhook
@@ -187,7 +187,7 @@ def capture_paypal_order(request):
                     order.shipping_status = label_res.get("tracking_status", "UNKNOWN")
                     order.tracking_updated_at = timezone.now()
                     order.save()
-                    
+                    # Step 4: Celery 假追蹤狀態
                     simulate_fake_webhook(order.tracking_number)
 
             except Exception as e:

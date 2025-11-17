@@ -3,6 +3,7 @@ from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
 from shipping.webhook import shippo_webhook
+from paypal.webhook import paypal_webhook
 urlpatterns = [
     #Admin url
     path('admin/', admin.site.urls),
@@ -17,7 +18,7 @@ urlpatterns = [
     
     #Webhook URL
     path('webhooks/shippo/',shippo_webhook , name="shippo-webhook"),
-    
+    path('webhooks/paypal/',paypal_webhook , name="paypal-webhook"),
 ]
 
 

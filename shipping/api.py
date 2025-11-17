@@ -1,6 +1,7 @@
 import requests
 from django.conf import settings
 import json
+from shipping.tasks import send_fake_webhook_task
 
 def get_order_weight(order):
     
@@ -82,23 +83,23 @@ def buy_shipping_label(rate_id):
 
 
 def simulate_fake_webhook(tracking_number):
+    """
+    逐段模擬物流狀態：
+    PRE_TRANSIT → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED
+    每階段間隔一分鐘
+    """
 
-    
-    """ 模擬自己 POST Webhook 給後端，用於測試流程 """
-    url = f"https://buyriastore.com/webhooks/shippo/?token={settings.SHIPPO_WEBHOOK_TOKEN}"
+    STAGES = [
+        ("PRE_TRANSIT", 0),
+        ("IN_TRANSIT", 60),
+        ("OUT_FOR_DELIVERY", 120),
+        ("DELIVERED", 180),
+    ]
 
-    payload = {
-        "tracking_number": tracking_number,
-        "tracking_status": {
-            "status": "DELIVERED",
-            "status_details": "Fake: Package delivered (simulated)",
-        },
-        "carrier": "usps",
-        "test": True
-    }
+    for status, delay in STAGES:
+        send_fake_webhook_task.apply_async(
+            args=[tracking_number, status],
+            countdown=delay
+        )
 
-    headers = {"Content-Type": "application/json"}
-
-    res = requests.post(url, headers=headers, data=json.dumps(payload))
-
-    return res
+    return True
