@@ -37,6 +37,8 @@
             <span class="badge bg-success">已付款</span>
           {% elif entry.order.payment_status == "PENDING" %}
             <span class="badge bg-warning text-dark">待確認</span>
+          {% elif entry.order.payment_status == "REFUNDING" %}
+            <span class="badge bg-danger">退款處理中</span>
           {% else %}
             <span class="badge bg-danger">未付款</span>
           {% endif %}
