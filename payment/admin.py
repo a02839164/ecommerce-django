@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import reverse, path
 from django.utils.html import format_html
 from payment.models import Order , OrderItem ,ShippingAddress
-from paypal.services.views import process_single_order_refund
+from paypal.views import process_single_order_refund
 
 admin.site.register(ShippingAddress)
 admin.site.register(OrderItem)

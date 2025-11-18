@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 
 from django.contrib.auth.decorators import login_required
 
-from paypal.services.paypal_service import PaypalService
+from paypal.paypal_service import PaypalService
 from decimal import Decimal
 
 from shipping.api import create_shipment, buy_shipping_label, simulate_fake_webhook

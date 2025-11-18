@@ -1,8 +1,8 @@
-# paypal/services/views.py (或重命名為 paypal/services/refund_processor.py)
-# 這裡我們將其視為處理邏輯單元
+# 管理後台 / Refund 按鈕使用的邏輯單元
+
 
 from django.contrib import messages
-from paypal.services.paypal_service import PaypalService
+from paypal.paypal_service import PaypalService
 from payment.models import Order # 假設 Order 已經被 import
 
 # 這裡我們不再需要 @require_POST 和 redirect，因為它不再是獨立的 View

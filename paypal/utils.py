@@ -1,3 +1,6 @@
+# 共用工具（驗證簽章、解析資料）
+
+
 import json
 import requests
 import logging
@@ -71,3 +74,20 @@ def verify_paypal_signature(request):
 
 
     return is_valid, data
+
+
+
+def get_capture_id_from_links(resource):
+    """
+    REFUND webhook 使用 refund_id 作為 resource.id
+    真正的 capture_id 被藏在 links[].href 裡（rel = "up"）
+    例：
+    "href": "https://api.sandbox.paypal.com/v2/payments/captures/935885208W2191049"
+    """
+    links = resource.get("links", [])
+    for link in links:
+        if link.get("rel") == "up":
+            href = link.get("href")
+            return href.rstrip("/").split("/")[-1]  # 取 URL 最後一段
+    return None
+

@@ -1,3 +1,6 @@
+# 呼叫 PayPal API（建立訂單、付款、退款）
+
+
 from django.conf import settings
 import json
 from paypalcheckoutsdk.core import SandboxEnvironment, PayPalHttpClient 
