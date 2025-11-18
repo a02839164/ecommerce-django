@@ -57,8 +57,10 @@ class Order(models.Model):
     # update PayPal 
     paypal_order_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     payer_id = models.CharField(max_length=255, null=True, blank=True)
+    paypal_capture_id = models.CharField(max_length=255, unique=True, null=True, blank=True)
     payment_status = models.CharField(max_length=50, null=True, blank=True)    
 
+    verify_webhook = models.CharField(max_length=100, null=True, blank=True)
     # update shipping
     shipping_carrier = models.CharField(max_length=50, blank=True, null=True)
     shipping_status = models.CharField(max_length=50, blank=True, null=True)

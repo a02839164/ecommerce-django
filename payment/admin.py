@@ -14,6 +14,8 @@ class OrderAdmin(admin.ModelAdmin):
         'shipping_fee',
         'amount_paid',
         'payment_status',
+        'paypal_capture_id',   
+        'verify_webhook',     
         'date_ordered',
     )
     list_filter = ('payment_status', 'date_ordered')

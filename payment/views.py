@@ -118,6 +118,7 @@ def capture_paypal_order(request):
             return JsonResponse({'error':'Payment not completed'}, status=400)
         
         paypal_capture = result.purchase_units[0].payments.captures[0]
+        paypal_capture_id = paypal_capture.id
         paypal_cur = paypal_capture.amount.currency_code
         paypal_total = Decimal(paypal_capture.amount.value)
 
@@ -151,6 +152,7 @@ def capture_paypal_order(request):
 
                 paypal_order_id = result.id,
                 payer_id = getattr(result.payer, 'payer_id', None),
+                paypal_capture_id = paypal_capture_id,
                 payment_status = status,
             )
 
