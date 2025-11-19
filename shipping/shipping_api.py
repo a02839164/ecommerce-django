@@ -86,7 +86,6 @@ def simulate_fake_webhook(tracking_number):
     """
     逐段模擬物流狀態：
     PRE_TRANSIT → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED
-    每階段間隔一分鐘
     """
 
     STAGES = [

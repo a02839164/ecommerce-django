@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .utils import verify_paypal_signature, get_capture_id_from_links
 from payment.models import Order
-
+from notifications.notifications_api import send_refund_success_email
 logger = logging.getLogger(__name__) 
 
 
@@ -82,6 +82,7 @@ def paypal_webhook(request):
 
     elif event_type == "PAYMENT.CAPTURE.REFUNDED":
         order.payment_status = "REFUNDED"
+        send_refund_success_email(order)
 
     elif event_type == "CHECKOUT.ORDER.APPROVED":
         order.payment_status = "APPROVED"

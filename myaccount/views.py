@@ -3,13 +3,12 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
 from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm
 from django.contrib.auth.models import User
-
+from django.contrib.auth.views import PasswordChangeView
 from .tokens import user_tokenizer_generate
 from .models import Profile
-from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes,force_str
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
-from django.core.mail import EmailMultiAlternatives
+from notifications.notifications_api import send_verification_email
 from django.db import transaction
 from django.urls import reverse
 
@@ -23,8 +22,9 @@ from django.contrib import messages
 
 from payment.forms import ShippingForm
 from payment.models import ShippingAddress
-
 from payment.models import Order, OrderItem
+
+from notifications.notifications_api import send_password_changed_email
 
 # def preview_email_template(request):
 #     context = {
@@ -57,22 +57,17 @@ def register(request):
                 )
             )
 
-            context = {'user':user,'activation_link':activation_link,}
-            subject = 'Account verification email'
-            text_body = render_to_string('account/registration/email-verification.txt', context)
-            html_body = render_to_string('account/registration/email-verification.html', context)
-
             try:
-                email = EmailMultiAlternatives(subject, text_body, to=[user.email])
-                email.attach_alternative(html_body, "text/html")
-                email.send()
+
+                send_verification_email(user, activation_link)
 
             except Exception as e:
+
                 user.delete()
 
             return redirect('email-verification-sent')
-            
 
+       
     context = {'form':form}
 
     return render(request, 'account/registration/register.html', context)
@@ -390,3 +385,11 @@ def track_orders(request):
         return render(request, 'account/track-orders.html' )
 
 
+
+class MyPasswordChangeView(PasswordChangeView):
+
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        send_password_changed_email(self.request.user)
+        return response

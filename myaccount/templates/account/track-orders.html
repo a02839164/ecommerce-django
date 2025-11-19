@@ -31,7 +31,7 @@
       {% for entry in page_obj %}
         <hr>
         <h5><i class="fa fa-bookmark" aria-hidden="true"></i>&nbsp;Order #{{ entry.order.id }}</h5>
-        <small><i class="fa fa-calendar-o" aria-hidden="true"></i>&nbsp;Date: {{ entry.order.date_ordered }}</small>
+        <strong>&nbsp;Date: {{ entry.order.date_ordered }}</strong>
         <span style="margin-left: 20px;">
           {% if entry.order.payment_status == "COMPLETED" %}
             <span class="badge bg-success">已付款</span>
@@ -39,6 +39,8 @@
             <span class="badge bg-warning text-dark">待確認</span>
           {% elif entry.order.payment_status == "REFUNDING" %}
             <span class="badge bg-danger">退款處理中</span>
+          {% elif entry.order.payment_status == "REFUNDED" %}
+            <span class="badge bg-danger">已退款</span>
           {% else %}
             <span class="badge bg-danger">未付款</span>
           {% endif %}
@@ -46,9 +48,9 @@
         <br>
 
         <!-- 收件資訊 -->
-        <div><i class="fa fa-map-marker" aria-hidden="true"></i>&nbsp;Shipping Address:
+        <strong>&nbsp;Shipping Address:
           {{ entry.order.shipping_address }}
-        </div>
+        </strong>
           <!-- 🚚 新增物流資訊 -->
         <div style="margin-top: 10px; margin-left: 25px;">
           <p class="mb-1"><strong>物流公司：</strong>

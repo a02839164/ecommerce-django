@@ -54,15 +54,17 @@ INSTALLED_APPS = [
 
     'store',            #django app
     'cart',             #django app
-    'myaccount',          #django app
+    'myaccount',        #django app
     'payment',          #django app
     'shipping',         #django app
-    'paypal',
+    'paypal',           #django app
+    'notifications',    #django app
     'mathfilters',
 
     'crispy_forms',     #Crispy forms
     'crispy_bootstrap5',
     'storages',
+    'sendgrid_backend', # email
 ]
 
 # CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -157,13 +159,30 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Email configuration settings:
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = '587'
-EMAIL_USE_TLS = True
-# Be sure to read the guide in the resources folder of this lecture (SETUP THE EMAIL BACKEND)
-EMAIL_HOST_USER = env("EMAIL_HOST_USER")                        # Enter your GMAIL address
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")                  # Enter your app password
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = '587'
+# EMAIL_USE_TLS = True
+# # Be sure to read the guide in the resources folder of this lecture (SETUP THE EMAIL BACKEND)
+# EMAIL_HOST_USER = env("EMAIL_HOST_USER")                        
+# EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")                  
+
+# -------------------------
+# Email - SendGrid Backend
+# -------------------------
+
+EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+
+SENDGRID_API_KEY = env("SENDGRID_API_KEY")
+
+# 本地開發可隨便寫，但一定要寫
+DEFAULT_FROM_EMAIL = "a02839164@gmail.com"
+
+# 本地端要真的寄信 → 設 False
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+
+# 可選：避免寄信時在 console 印太多 debug
+SENDGRID_ECHO_TO_STDOUT = True
 
 
 

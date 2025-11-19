@@ -46,7 +46,7 @@ urlpatterns = [
     path('reset_password_complete/', auth_views.PasswordResetCompleteView.as_view(template_name= 'account/password/password-reset-complete.html'), name= 'password_reset_complete'),
 
     #change
-    path('change_password/', auth_views.PasswordChangeView.as_view(template_name='account/password/password-change.html',success_url='/account/change_password_done/'), name='password_change'),
+    path('change_password/', views.MyPasswordChangeView.as_view(template_name = "account/password/password-change.html",success_url='/account/change_password_done/'),  name='password_change'),
     
     path('change_password_done/', auth_views.PasswordChangeDoneView.as_view(template_name='account/password/password-change-done.html'), name='password_change_done'),
 ]
