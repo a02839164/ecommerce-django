@@ -157,31 +157,16 @@ MEDIA_ROOT = BASE_DIR / "media"   #保留 本地暫存／上傳來源
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
-# Email configuration settings:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = '587'
-# EMAIL_USE_TLS = True
-# # Be sure to read the guide in the resources folder of this lecture (SETUP THE EMAIL BACKEND)
-# EMAIL_HOST_USER = env("EMAIL_HOST_USER")                        
-# EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD")                  
-
 # -------------------------
 # Email - SendGrid Backend
 # -------------------------
-
 EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
-
 SENDGRID_API_KEY = env("SENDGRID_API_KEY")
 
-# 本地開發可隨便寫，但一定要寫
-DEFAULT_FROM_EMAIL = "a02839164@gmail.com"
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@buyriastore.com")
 
-# 本地端要真的寄信 → 設 False
 SENDGRID_SANDBOX_MODE_IN_DEBUG = False
 
-# 可選：避免寄信時在 console 印太多 debug
 SENDGRID_ECHO_TO_STDOUT = True
 
 

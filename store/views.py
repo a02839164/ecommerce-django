@@ -34,42 +34,38 @@ def product_search(request):
     query = request.GET.get('q', '').strip()         #取得name = q裡面的value，預設空白，  .strip() 去掉前後空白
     category_id = request.GET.get('category', '')    #取得name = category 裡面的value，預設空白
     sort_by = request.GET.get('sort', 'relevance')   #取得name = sort 裡面的value，預設「相似度」
-    results = Product.objects.all()
+    results = Product.objects.only("id", "title", "price", "slug", "thumbnail", "category_id")
 
+    # 搜尋條件
     if query:
+        results = results.filter(title__icontains=query)
 
-        results = results.filter(Q(title__icontains=query)) # icontains不分大小寫的模糊比對
-        
     if category_id:
-
         results = results.filter(category_id=category_id)
 
-
-
+    # 排序
     if sort_by == "price_low":
-
-        results = results.order_by('price')
-
-    if sort_by == "price_high":
-
-        results = results.order_by('-price')
+        results = results.order_by("price", "id")   # 升序
+    elif sort_by == "price_high":
+        results = results.order_by("-price", "-id") # 降序
     else:
+        results = results.order_by("id")            # relevance = id 預設順序
 
-        pass
-    
+    # 限制最多結果（加速）
+    MAX_RESULTS = 1000
+    results = results[:MAX_RESULTS]
 
-    paginator = Paginator(results.distinct(), 12)
-    page_number = request.GET.get('page')
+    # 分頁
+    paginator = Paginator(results, 18)
+    page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
-
     context = {
-        'query':query,
-        # 'results': results.distinct(),
-        'page_obj':page_obj,
-        'selected_category': category_id,
-        'categories': Category.objects.all(),
-        'sort_by':sort_by,
+        "query": query,
+        "page_obj": page_obj,
+        "selected_category": category_id,
+        "categories": Category.objects.all(),
+        "sort_by": sort_by,
     }
 
-    return render(request, 'store/product-search.html', context)
+    return render(request, "store/product-search.html", context)
