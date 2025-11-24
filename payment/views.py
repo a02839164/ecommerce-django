@@ -11,12 +11,13 @@ from django.views.decorators.http import require_POST
 
 from django.contrib.auth.decorators import login_required
 
-from paypal.paypal_api import PaypalService
+from paypal.api import PaypalService
 from decimal import Decimal
 
-from shipping.shipping_api import create_shipment, buy_shipping_label, simulate_fake_webhook
+from shipping.api import create_shipment, buy_shipping_label
+from shipping.fake_webhook import simulate_fake_webhook
 from django.utils import timezone
-from notifications.notifications_api import send_order_confirm_email
+from notifications.handlers.order import send_order_confirm_email
 
 @login_required(login_url='my-login')
 def checkout(request):
@@ -189,6 +190,7 @@ def capture_paypal_order(request):
                     order.shipping_status = label_res.get("tracking_status", "UNKNOWN")
                     order.tracking_updated_at = timezone.now()
                     order.save()
+
                     # Step 4: Celery 假追蹤狀態
                     simulate_fake_webhook(order.tracking_number)
                     send_order_confirm_email(order)

@@ -1,13 +1,13 @@
 # 處理 PayPal Webhook 回拋
-
 import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .utils import verify_paypal_signature, get_capture_id_from_links
+from .webhook_helpers import verify_paypal_signature, get_capture_id_from_links
+from .event_handler import PaypalEventHandler
 from payment.models import Order
-from notifications.notifications_api import send_refund_success_email
-logger = logging.getLogger(__name__) 
 
+
+logger = logging.getLogger(__name__) 
 
 @csrf_exempt
 def paypal_webhook(request):
@@ -25,17 +25,17 @@ def paypal_webhook(request):
     resource = data.get("resource", {}) or {}
 
     # Step 2：抓 order_id / capture_id
-    # A. 付款 webhook：resource.id = capture_id
+        # A. 付款 webhook：resource.id = capture_id
     capture_id_from_resource_id = resource.get("id")
 
-    # B. 有些付款 webhook 會帶 order_id
+        # B. 有些付款 webhook 會帶 order_id
     order_id = (
         resource.get("supplementary_data", {})
                 .get("related_ids", {})
                 .get("order_id")
     )
 
-    # C. REFUND webhook：真正 capture_id 在 links["up"]
+        # C. REFUND webhook：真正 capture_id 在 links["up"]
     capture_id_from_links = get_capture_id_from_links(resource)
 
     logger.info(
@@ -44,21 +44,19 @@ def paypal_webhook(request):
         f"capture_id_from_links={capture_id_from_links}"
     )
 
-    # =================================
-    # Step 3：尋找訂單
-    # =================================
 
+    # Step 3：尋找訂單
     order = None
 
-    # 用 order_id 找
+        # 用 order_id 找
     if order_id:
         order = Order.objects.filter(paypal_order_id=order_id).first()
 
-    # 用 capture_id_from_resource_id 找（付款）
+        # 用 capture_id_from_resource_id 找（付款）
     if not order and capture_id_from_resource_id:
         order = Order.objects.filter(paypal_capture_id=capture_id_from_resource_id).first()
 
-    # 用 capture_id_from_links 找（退款）
+        # 用 capture_id_from_links 找（退款）
     if not order and capture_id_from_links:
         order = Order.objects.filter(paypal_capture_id=capture_id_from_links).first()
 
@@ -73,26 +71,6 @@ def paypal_webhook(request):
 
 
     # Step 4：更新訂單狀態
-    logger.info(f"Updating order #{order.id} with event {event_type}")
-
-    order.verify_webhook = event_type
-
-    if event_type == "PAYMENT.CAPTURE.COMPLETED":
-        order.payment_status = "COMPLETED"
-
-    elif event_type == "PAYMENT.CAPTURE.REFUNDED":
-        order.payment_status = "REFUNDED"
-        send_refund_success_email(order)
-
-    elif event_type == "CHECKOUT.ORDER.APPROVED":
-        order.payment_status = "APPROVED"
-
-    order.save()
-
-    logger.info(
-        f"Order #{order.id} UPDATED → "
-        f"payment_status={order.payment_status}, "
-        f"verify_webhook={order.verify_webhook}"
-    )
+    PaypalEventHandler.handle(event_type, resource, order)
 
     return JsonResponse({"status": "ok"})

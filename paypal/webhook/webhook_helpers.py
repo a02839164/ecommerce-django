@@ -1,6 +1,5 @@
 # 共用工具（驗證簽章、解析資料）
 
-
 import json
 import requests
 import logging

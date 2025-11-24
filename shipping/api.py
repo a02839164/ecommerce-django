@@ -79,26 +79,3 @@ def buy_shipping_label(rate_id):
     response = requests.post(url, headers=HEADERS, json=data)
     return response.json()
 
-
-
-
-def simulate_fake_webhook(tracking_number):
-    """
-    逐段模擬物流狀態：
-    PRE_TRANSIT → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED
-    """
-
-    STAGES = [
-        ("PRE_TRANSIT", 0),
-        ("IN_TRANSIT", 60),
-        ("OUT_FOR_DELIVERY", 120),
-        ("DELIVERED", 180),
-    ]
-
-    for status, delay in STAGES:
-        send_fake_webhook_task.apply_async(
-            args=[tracking_number, status],
-            countdown=delay
-        )
-
-    return True

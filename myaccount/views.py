@@ -8,7 +8,7 @@ from .tokens import user_tokenizer_generate
 from .models import Profile
 from django.utils.encoding import force_bytes,force_str
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
-from notifications.notifications_api import send_verification_email
+from notifications.handlers.account import send_verification_email, send_password_changed_email
 from django.db import transaction
 from django.urls import reverse
 
@@ -23,8 +23,6 @@ from django.contrib import messages
 from payment.forms import ShippingForm
 from payment.models import ShippingAddress
 from payment.models import Order, OrderItem
-
-from notifications.notifications_api import send_password_changed_email
 
 # def preview_email_template(request):
 #     context = {

@@ -2,7 +2,7 @@
 
 
 from django.contrib import messages
-from paypal.paypal_api import PaypalService
+from paypal.api import PaypalService
 from payment.models import Order # 假設 Order 已經被 import
 
 # 這裡我們不再需要 @require_POST 和 redirect，因為它不再是獨立的 View

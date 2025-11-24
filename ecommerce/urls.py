@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.urls import path,include
 from django.conf import settings
 from django.conf.urls.static import static
-from shipping.webhook import shippo_webhook
-from paypal.webhook import paypal_webhook
+from shipping.webhook.webhook import shippo_webhook
+from paypal.webhook.webhook import paypal_webhook
+
+
 urlpatterns = [
     #Admin url
     path('admin/', admin.site.urls),
