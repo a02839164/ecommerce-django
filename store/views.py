@@ -2,10 +2,19 @@ from django.shortcuts import render,get_object_or_404
 from . models import Category , Product
 from django.db.models import Q
 from django.core.paginator import Paginator
+from analytics.services.views_tracker import track_product_view
+from analytics.services.hot_products import get_hot_products
 
 def store(request):
+
+    hot_products = get_hot_products(days=7, limit=10)
     all_product = Product.objects.filter(is_fake=False)
-    context = {'all_product':all_product}
+
+    context = {
+        'all_product':all_product,
+        "hot_products": hot_products,
+    }
+    
     return render(request, 'store/store.html', context)
 
 
@@ -24,6 +33,9 @@ def list_category(request, category_slug=None):
 
 def product_info(request, product_slug):
     product = get_object_or_404(Product, slug=product_slug, is_fake=False )
+
+    track_product_view(request, product)
+
     context = {'product':product}
     
     return render(request, 'store/product-info.html',context)

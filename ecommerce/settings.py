@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'shipping',         #django app
     'paypal',           #django app
     'notifications',    #django app
+    'analytics',        #django app
     'mathfilters',
 
     'crispy_forms',     #Crispy forms

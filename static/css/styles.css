@@ -1,3 +1,12 @@
+@media (min-width: 1200px) { /* Bootstrap XL 斷點 */
+    .row-cols-xl-10-custom > .col {
+        flex: 0 0 auto;
+        /* 1/10 = 10% */
+        width: 10%; 
+    }
+}
+
+
 .form-layout{
 
     border-radius: 20px;
