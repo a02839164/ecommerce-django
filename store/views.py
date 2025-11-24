@@ -4,15 +4,19 @@ from django.db.models import Q
 from django.core.paginator import Paginator
 from analytics.services.views_tracker import track_product_view
 from analytics.services.hot_products import get_hot_products
+from analytics.services.recent_product import get_recent_products
 
 def store(request):
 
-    hot_products = get_hot_products(days=7, limit=10)
     all_product = Product.objects.filter(is_fake=False)
+    hot_products = get_hot_products(days=7, limit=10)
+    recent_views = get_recent_products(request, limit=10)
+
 
     context = {
         'all_product':all_product,
-        "hot_products": hot_products,
+        'hot_products': hot_products,
+        'recent_views':recent_views
     }
     
     return render(request, 'store/store.html', context)
