@@ -6,7 +6,7 @@ def apply_inventory_sale(order):
     """
     正式扣庫存（付款完成）
     """
-    for item in order.items.all():
+    for item in order.orderitem_set.all():
         product = item.product
 
         # 扣庫存
@@ -26,7 +26,7 @@ def apply_inventory_refund(order):
     """
     補庫存（退款完成）
     """
-    for item in order.items.all():
+    for item in order.orderitem_set.all():
         product = item.product
 
         product.stock += item.quantity

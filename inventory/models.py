@@ -24,3 +24,15 @@ class InventoryLog(models.Model):
 
     def __str__(self):
         return f"{self.product.title} {self.quantity} ({self.action})"
+
+    
+class BulkStockEntry(models.Model):
+    class Meta:
+        managed = False                     # ❗ 不建立資料表
+        app_label = "inventory"
+        verbose_name = "Bulk Stock Manager"
+        verbose_name_plural = "Bulk Stock Manager"
+
+    def __str__(self):
+        return "Bulk Stock Manager"
+    

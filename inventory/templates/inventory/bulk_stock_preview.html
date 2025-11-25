@@ -1,0 +1,65 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>匯入前預覽</h1>
+
+<p>請確認以下庫存變更無誤，再按「確認匯入」。</p>
+
+{% if errors %}
+    <div class="errorlist" style="margin: 20px 0;">
+        <h3>⚠️ 錯誤項目：</h3>
+        <ul>
+        {% for e in errors %}
+            <li>{{ e }}</li>
+        {% endfor %}
+        </ul>
+    </div>
+{% endif %}
+
+{% if preview_data %}
+<table class="table" style="margin-top: 20px;">
+    <thead>
+        <tr>
+            <th>商品</th>
+            <th>原庫存</th>
+            <th>新庫存</th>
+            <th>差異</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in preview_data %}
+        <tr>
+            <td>{{ item.product.title }}</td>
+            <td>{{ item.old }}</td>
+            <td>{{ item.new }}</td>
+            <td>
+                {% if item.diff > 0 %}
+                    <span style="color:green;">+{{ item.diff }}</span>
+                {% elif item.diff < 0 %}
+                    <span style="color:red;">{{ item.diff }}</span>
+                {% else %}
+                    0
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>沒有資料需要預覽</p>
+{% endif %}
+
+<hr>
+
+<form method="POST">
+    {% csrf_token %}
+    <button class="button default" type="submit" name="confirm_import">
+        ✅ 確認匯入
+    </button>
+
+    <a href="{% url 'inventory:bulk-stock' %}" class="button" style="margin-left: 10px;">
+        取消
+    </a>
+</form>
+
+{% endblock %}

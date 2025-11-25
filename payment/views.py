@@ -165,7 +165,7 @@ def capture_paypal_order(request):
                 paypal_order_id = result.id,
                 payer_id = getattr(result.payer, 'payer_id', None),
                 paypal_capture_id = paypal_capture_id,
-                payment_status = status,
+                payment_status = "PENDING",
             )
 
             order_id = order.pk

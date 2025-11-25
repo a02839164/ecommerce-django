@@ -1,0 +1,28 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>批次匯入庫存（CSV）</h1>
+
+<p>你可以先下載目前所有商品的庫存 CSV，再修改後重新上傳。</p>
+
+<div style="margin-bottom: 20px;">
+    <a class="button" href="?download_all=1">⬇ 下載目前庫存 CSV</a>
+</div>
+
+<hr>
+
+<h3>上傳 CSV 以進行預覽</h3>
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <p>請選擇 CSV 檔案（格式：id,stock）</p>
+    <input type="file" name="file" accept=".csv" required>
+
+    <br><br>
+
+    <button class="button default" type="submit" name="preview">
+        🔍 預覽變更
+    </button>
+</form>
+
+{% endblock %}

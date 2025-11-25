@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+
+{% block content %}
+<h1>匯入完成</h1>
+
+<p>成功更新 {{ updated }} 筆商品。</p>
+
+{% if errors %}
+<div class="errorlist" style="margin: 20px 0;">
+    <h3>⚠️ 錯誤項目：</h3>
+    <ul>
+    {% for e in errors %}
+        <li>{{ e }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if success %}
+<h3>成功更新列表</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>商品</th>
+            <th>原庫存</th>
+            <th>新庫存</th>
+            <th>差異</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for row in success %}
+        <tr>
+            <td>{{ row.product.title }}</td>
+            <td>{{ row.old }}</td>
+            <td>{{ row.new }}</td>
+            <td>
+                {% if row.diff > 0 %}
+                    <span style="color:green;">+{{ row.diff }}</span>
+                {% elif row.diff < 0 %}
+                    <span style="color:red;">{{ row.diff }}</span>
+                {% else %}
+                    0
+                {% endif %}
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<hr>
+
+<a href="/admin/" class="button">⬅ 回到後台首頁</a>
+<a href="{% url 'inventory:bulk-stock' %}" class="button" style="margin-left: 10px;">再匯入一次</a>
+
+{% endblock %}
