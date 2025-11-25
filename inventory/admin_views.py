@@ -125,14 +125,13 @@ def bulk_update_stock(request):
             return redirect("bulk-stock")
 
 
-
     # Step 2：使用者按「確認匯入」
     if request.method == "POST" and "confirm_import" in request.POST:
 
         csv_data = request.session.get("bulk_csv")
         if not csv_data:
             messages.error(request, "找不到要匯入的 CSV 資料（session 遺失）。")
-            return redirect("bulk-stock")
+            return redirect("inventory:bulk-stock")
 
         io_string = io.StringIO(csv_data)
         reader = csv.DictReader(io_string)
@@ -143,32 +142,45 @@ def bulk_update_stock(request):
 
         for row in reader:
 
+            # ✨ 跳過整列空白
             if not any(row.values()):
                 continue
 
-            product_id = row.get("id")
-            new_stock = int(row.get("stock"))
+            product_id = (row.get("id") or "").strip()
+            new_stock_raw = (row.get("stock") or "").strip()
 
-            if not product_id or not new_stock:
-
+            # ✨ id 或 stock 空白 → 跳過並記錄錯誤
+            if not product_id or not new_stock_raw:
+                error_rows.append(f"缺少欄位（id 或 stock）：{row}")
                 continue
 
+            # ✨ stock 必須是整數
+            try:
+                new_stock = int(new_stock_raw)
+            except ValueError:
+                error_rows.append(f"無效的庫存數值（非整數）：{new_stock_raw}")
+                continue
+
+            # ✨ 查商品
             try:
                 product = Product.objects.get(id=product_id, is_fake=False)
-
             except Product.DoesNotExist:
-                
                 error_rows.append(f"找不到商品 ID：{product_id}")
                 continue
 
             old_stock = product.stock
             diff = new_stock - old_stock
 
-            # 更新庫存
+            # ⭐️ 若沒有變化 → 跳過，不寫 Log，不算成功更新
+            if diff == 0:
+
+                continue
+ 
+            # ✨ 更新庫存
             product.stock = new_stock
             product.save()
 
-            # 寫入庫存 Log
+            # ✨ 寫入 Log
             InventoryLog.objects.create(
                 product=product,
                 quantity=diff,
@@ -185,9 +197,8 @@ def bulk_update_stock(request):
 
             updated_count += 1
 
-        # 清除 session
-        if "bulk_csv" in request.session:
-            del request.session["bulk_csv"]
+        # ✨ 清除 session
+        request.session.pop("bulk_csv", None)
 
         return render(request, "inventory/bulk_stock_result.html", {
             "updated": updated_count,
@@ -195,8 +206,4 @@ def bulk_update_stock(request):
             "errors": error_rows,
         })
 
-
-    # -----------------------------------------
-    # 🔹 Step 0：預設 GET → 顯示上傳頁
-    # -----------------------------------------
     return render(request, "inventory/bulk_stock.html")
