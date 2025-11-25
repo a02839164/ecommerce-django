@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'paypal',           #django app
     'notifications',    #django app
     'analytics',        #django app
+    'inventory',        #django app
     'mathfilters',
 
     'crispy_forms',     #Crispy forms

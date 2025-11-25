@@ -62,6 +62,17 @@ def create_paypal_order(request):
 
         return JsonResponse({'error':'Cart is empty'}, status=400)
 
+    for item in cart:
+        
+        product = item['product']
+        qty = item['qty']
+
+        if product.stock <= 0:
+            return JsonResponse({'error': f'{product.title} 已售完'}, status=400)
+
+        if qty > product.stock:
+            return JsonResponse({'error': f'{product.title} 庫存不足'}, status=400)
+
 
     total_amount  = cart.get_total() + cart.get_shipping_fee()
     svc =PaypalService()

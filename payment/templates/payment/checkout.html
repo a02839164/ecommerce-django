@@ -144,16 +144,24 @@ const myPaypalButton = paypal.Buttons({
         },
 
 
-        createOrder: () => {       
+        createOrder: () => {
             return $.ajax({
-                type : 'POST',
-                url  : '{% url "create-paypal-order" %}',
-                data :{csrfmiddlewaretoken: '{{ csrf_token }}'},
-            }).then(json => json.id);                                   
-                               
-        },        
+                type: 'POST',
+                url: '{% url "create-paypal-order" %}',
+                data: { csrfmiddlewaretoken: '{{ csrf_token }}' },
+            })
+            .then(json => json.id) 
+            .fail((xhr) => {
 
 
+                const msg = xhr.responseJSON?.error || "下單前檢查失敗，請稍後再試。";
+                alert("❌ " + msg);   // 顯示後端的錯誤
+                window.location.replace("{% url 'payment-failed' %}");
+                throw new Error(msg); // 阻止 PayPal 進入支付畫面
+
+
+            });
+        },
 
 
 

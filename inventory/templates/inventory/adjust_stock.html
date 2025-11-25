@@ -1,0 +1,167 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrahead %}
+<style>
+    body, .stock-wrapper {
+        background: #111 !important;
+        color: #fff !important;
+    }
+
+    .stock-wrapper {
+        max-width: 650px;
+        margin: 30px auto;
+        background: #1b1b1b;
+        border-radius: 12px;
+        padding: 40px 40px;
+        border: 1px solid #333;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .stock-title {
+        font-size: 22px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #fff;
+    }
+
+    .stock-status {
+        margin-bottom: 25px;
+        font-size: 15px;
+        color: #ccc;
+    }
+
+    .status-green { color: #33dd66; }
+    .status-orange { color: #ffcc66; }
+    .status-red { color: #ff6666; }
+
+    .form-label {
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #ddd;
+    }
+
+    .qty-input, textarea, .form-control {
+        background: #000;
+        color: #fff;
+        border: 1px solid #444;
+    }
+
+    .qty-input:focus, textarea:focus, .form-control:focus {
+        border-color: #63a1e4;
+        outline: none;
+        box-shadow: 0 0 5px rgba(0,123,255,0.5);
+    }
+
+    .quick-btn {
+        padding: 6px 14px;
+        margin-right: 6px;
+        margin-bottom: 6px;
+        border-radius: 6px;
+        border: 1px solid #63a1e4;
+        background: #111;
+        color: #63a1e4;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .quick-btn:hover {
+        background: #007bff;
+        color: #fff;
+    }
+
+    .btn-submit {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 7px;
+        margin-top: 30px;
+        margin-bottom: 18px;     
+        font-weight: bold;
+        background: #007bff;
+        color: #fff;
+    }
+
+    .btn-submit:hover {
+        background: #0056cc;
+    }
+
+    .btn-back {
+        width: 100%;
+        padding: 12px;
+        margin-top: 5px;        
+        font-size: 15px;
+        border-radius: 7px;
+        background: #444;
+        color: #fff;
+        border: none;
+    }
+
+    .btn-back:hover {
+        background: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="stock-wrapper">
+
+    <div class="stock-title">調整庫存：{{ product.title }}</div>
+
+    <div class="stock-status">
+        目前庫存：
+        {% if product.stock <= 0 %}
+            <span class="status-red">{{ product.stock }}（已售完）</span>
+        {% elif product.stock <= 5 %}
+            <span class="status-orange">{{ product.stock }}（低庫存）</span>
+        {% else %}
+            <span class="status-green">{{ product.stock }} 件</span>
+        {% endif %}
+    </div>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label class="form-label">調整數量（正數=補貨，負數=扣減）:</label>
+        <input type="number" name="qty" id="qty-field" class="qty-input form-control" required>
+
+        <!-- 快捷按鈕 -->
+        <div class="quick-btn-group mt-2">
+            <button type="button" class="quick-btn" data-val="1">+1</button>
+            <button type="button" class="quick-btn" data-val="5">+5</button>
+            <button type="button" class="quick-btn" data-val="10">+10</button>
+
+            <button type="button" class="quick-btn" data-val="-1">-1</button>
+            <button type="button" class="quick-btn" data-val="-5">-5</button>
+            <button type="button" class="quick-btn" data-val="-10">-10</button>
+        </div>
+
+        <label class="form-label">備註 :</label>
+        <textarea name="note" rows="3" class="form-control" ></textarea>
+
+        <button class="btn-submit" type="submit">✔ 提交庫存調整</button>
+
+        <a href="/admin/store/product/" class="btn-back">
+            ← 返回商品列表
+        </a>
+
+    </form>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const qtyField = document.getElementById("qty-field");
+
+    document.querySelectorAll(".quick-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            const val = parseInt(this.dataset.val);
+            const current = parseInt(qtyField.value || 0);
+            qtyField.value = current + val;
+        });
+    });
+});
+</script>
+
+{% endblock %}

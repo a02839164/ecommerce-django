@@ -179,6 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
         const productId = $(this).data('index');
         const $input = $('#qty' + productId);             //定位到購物車中當前正在操作的那個商品的數量輸入框。(用字串串接的方式，將一個固定的前綴 (#qty) 與商品的唯一 ID (productId) 結合，動態地生成該輸入框的完整ID選擇器)，jQuery 函數 $() 接收到 ID 選擇器後，就會在整個網頁中尋找 ID 為 qty456 的那個 <input> 元素：
         let currentQty = parseInt($input.val()) || 0;     //從數量輸入框中讀取當前的數值，並轉換為整數（如果輸入框是空或格式錯誤，將數量設為 0）。
+        $input.data('old-value', currentQty);
 
         if ($(this).hasClass('plus-btn')) {
             currentQty++;
@@ -190,12 +191,21 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
         updateCartQuantity(productId, currentQty, $input);
     });
 
+    // 使用者點擊輸入框時，記錄舊的數量
+    $(document).on('focus', '.product-qty', function(){
+        const $qtyInput = $(this);
+        const oldQty = parseInt($qtyInput.val()) || 1;
+        $qtyInput.data('old-value', oldQty);
+    });
+
     // 直接輸入
     $(document).on('change', '.product-qty', function(e){
         const $qtyInput = $(this);
         const productId = $qtyInput.data('index');
+
         let newQty = parseInt($qtyInput.val());
-        if (isNaN(newQty) || newQty < 1) newQty = 1;   //isNaN 檢查 newQty 是否為非數字
+        if (isNaN(newQty) || newQty < 1) newQty = 1;
+
         $qtyInput.val(newQty);
         updateCartQuantity(productId, newQty, $qtyInput);
     });
@@ -236,7 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {         // 以下程�
 
             },
             error: function(xhr, errmsg, err){
+                const msg = xhr.responseJSON?.error || "加入購物車失敗";
+                alert("❌ " + msg);
                 console.error('cart update error', errmsg);
+                inputElement.val(inputElement.data('old-value'));
             }
         });
     }

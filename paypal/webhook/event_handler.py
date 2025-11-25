@@ -1,4 +1,5 @@
 from notifications.handlers.order import send_refund_success_email
+from inventory.services import apply_inventory_sale, apply_inventory_refund
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,9 +14,17 @@ class PaypalEventHandler:
         order.verify_webhook = event_type
 
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
-            order.payment_status = "COMPLETED"
+
+            if order.payment_status != "COMPLETED":  # 避免重複扣
+
+                apply_inventory_sale(order)
+                order.payment_status = "COMPLETED"
 
         elif event_type == "PAYMENT.CAPTURE.REFUNDED":
+
+            if order.payment_status != "REFUNDED":
+                apply_inventory_refund(order)
+
             order.payment_status = "REFUNDED"
             send_refund_success_email(order)
 

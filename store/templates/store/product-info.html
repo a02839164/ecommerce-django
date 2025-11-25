@@ -141,6 +141,9 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('✅ 已加入購物車');
       },
       error: function(xhr, errmsg, err){
+
+        const msg = xhr.responseJSON?.error || "加入購物車失敗";
+        alert("❌ " + msg);
         console.error('Add to cart failed', errmsg);
       }
     });

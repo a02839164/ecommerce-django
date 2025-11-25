@@ -21,6 +21,9 @@ urlpatterns = [
     #Webhook URL
     path('webhooks/shippo/',shippo_webhook , name="shippo-webhook"),
     path('webhooks/paypal/',paypal_webhook , name="paypal-webhook"),
+
+    #Inventory
+    path("inventory/", include("inventory.urls")),
 ]
 
 
