@@ -1,10 +1,11 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from .services import increase_stock, decrease_stock
 from store.models import Product
 from inventory.models import InventoryLog
+from django.utils import timezone
 import csv
 import io
 
@@ -14,7 +15,12 @@ import io
 def adjust_stock(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
-    if request.method == "POST":
+    if request.method == "POST" and not request.user.is_superuser:
+        messages.error(request, "您沒有權限調整庫存")
+        return redirect(request.path)
+
+
+    if request.method == "POST" and request.user.is_superuser:
         qty = int(request.POST.get("qty"))
         note = request.POST.get("note") or ""
 
@@ -39,9 +45,12 @@ def adjust_stock(request, product_id):
 
 # 下載全部商品庫存（排除 is_fake=TRUE）
 @staff_member_required
-def download_all_stock_csv():
+def download_all_stock_csv(request):
+
+    today_str = timezone.now().strftime("%Y-%m-%d")
+    
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = 'attachment; filename="all_product_stock.csv"'
+    response["Content-Disposition"] = f'attachment; filename="all_product_stock_{today_str}.csv"'
 
     writer = csv.writer(response)
     writer.writerow(["id", "title", "stock"])
@@ -61,7 +70,7 @@ def bulk_update_stock(request):
 
     # Step 0：下載目前庫存 CSV
     if "download_all" in request.GET:
-        return download_all_stock_csv()
+        return download_all_stock_csv(request)
 
 
 
@@ -132,7 +141,14 @@ def bulk_update_stock(request):
     # Step 2：使用者按「確認匯入」
     if request.method == "POST" and "confirm_import" in request.POST:
 
+        if not request.user.is_superuser:
+
+            messages.error(request, "您沒有權限進行庫存匯入。")
+            return redirect("inventory:bulk-stock")
+
+
         csv_data = request.session.get("bulk_csv")
+
         if not csv_data:
             messages.error(request, "找不到要匯入的 CSV 資料（session 遺失）。")
             return redirect("inventory:bulk-stock")

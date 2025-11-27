@@ -53,9 +53,20 @@
 
 <form method="POST">
     {% csrf_token %}
-    <button class="button default" type="submit" name="confirm_import">
-        ✅ 確認匯入
-    </button>
+    {% if request.user.is_superuser %}
+    <br>
+    <button class="button default" type="submit" name="confirm_import">✅ 確認匯入</button>
+    <br>
+    <br>
+    {% else %}
+    <br>
+    <br>
+    <p class="text-danger">您只有檢視/預覽權限，無法調整庫存。</p>
+    <br>
+    {% endif %}
+
+
+
 
     <a href="{% url 'inventory:bulk-stock' %}" class="button" style="margin-left: 10px;">
         取消

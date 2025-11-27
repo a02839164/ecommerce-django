@@ -140,8 +140,17 @@
         <label class="form-label">備註 :</label>
         <textarea name="note" rows="3" class="form-control" ></textarea>
 
+        {% if request.user.is_superuser %}
+        <br>
         <button class="btn-submit" type="submit">✔ 提交庫存調整</button>
-
+        <br>
+        <br>
+        {% else %}
+        <br>
+        <br>
+        <p class="text-danger">您只有檢視權限，無法調整庫存。</p>
+        <br>
+        {% endif %}
         <a href="/admin/store/product/" class="btn-back">
             ← 返回商品列表
         </a>
