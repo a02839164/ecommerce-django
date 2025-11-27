@@ -17,6 +17,18 @@ class OrderAdmin(admin.ModelAdmin):
 
     actions = ['admin_refund_orders']
 
+    def get_actions(self, request):
+
+        actions = super().get_actions(request)
+
+        if not request.user.is_superuser:
+            # 隱藏退款 action
+            if 'admin_refund_orders' in actions:
+                del actions['admin_refund_orders']
+
+        return actions
+
+
     @admin.action(description='Refund selected orders')
     def admin_refund_orders(self, request, queryset):
         """

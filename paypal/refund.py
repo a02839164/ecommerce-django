@@ -12,6 +12,10 @@ def process_single_order_refund(request, order_id):
     接受 request (用於 messages) 和 order_id。
     返回 True/False 表示是否成功處理。
     """
+    if not request.user.is_superuser:
+
+        messages.error(request, "您沒有權限執行退款。")
+        return False
     
     # 找訂單
     order = Order.objects.filter(id=order_id).first()
