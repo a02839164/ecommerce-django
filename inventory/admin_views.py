@@ -1,4 +1,4 @@
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
@@ -9,7 +9,7 @@ import csv
 import io
 
 
-
+#單一商品庫存
 @staff_member_required
 def adjust_stock(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -28,7 +28,7 @@ def adjust_stock(request, product_id):
                 decrease_stock(product, abs(qty), note=note, user=request.user)
 
             messages.success(request, "庫存調整成功")
-            return redirect("/admin/store/product/")
+            return redirect("admin:store_product_changelist")
 
         except Exception as e:
             messages.error(request, f"錯誤：{str(e)}")
@@ -38,6 +38,7 @@ def adjust_stock(request, product_id):
 
 
 # 下載全部商品庫存（排除 is_fake=TRUE）
+@staff_member_required
 def download_all_stock_csv():
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="all_product_stock.csv"'
@@ -45,7 +46,7 @@ def download_all_stock_csv():
     writer = csv.writer(response)
     writer.writerow(["id", "title", "stock"])
 
-    queryset = Product.objects.filter(is_fake=False).only("id", "title", "stock")
+    queryset = Product.objects.filter(is_fake=False).only("id", "title", "stock")  #資料庫龐大，可用.iterator()批次載入
 
     for p in queryset:
         writer.writerow([p.id, p.title, p.stock])
@@ -69,13 +70,13 @@ def bulk_update_stock(request):
 
         file = request.FILES.get("file")
         if not file:
-            messages.error(request, "請選擇 CSV 檔案。")
-            return redirect("bulk-stock")
+            messages.error(request, "格式錯誤，請選擇 CSV 檔案。")
+            return redirect("inventory:bulk-stock")
 
         try:
-            decoded = file.read().decode("utf-8")
-            io_string = io.StringIO(decoded)
-            reader = csv.DictReader(io_string)
+            decoded = file.read().decode("utf-8")   #讀取csv， decoded UTF-8純字串
+            io_string = io.StringIO(decoded)        #字串包裝成檔案物件
+            reader = csv.DictReader(io_string)      #讀取「檔案狀態」資料
 
             preview_list = []
             error_list = []
@@ -99,11 +100,14 @@ def bulk_update_stock(request):
                 try:
                     product = Product.objects.get(id=product_id, is_fake=False)
                 except Product.DoesNotExist:
-                    error_list.append(f"找不到商品 ID：{product_id}（可能是假商品）")
+                    error_list.append(f"找不到商品 ID：{product_id}")
                     continue
 
                 old_stock = product.stock
                 diff = new_stock - old_stock
+
+                if diff == 0:
+                    continue
 
                 preview_list.append({
                     "product": product,
@@ -122,7 +126,7 @@ def bulk_update_stock(request):
 
         except Exception as e:
             messages.error(request, f"解析 CSV 發生錯誤：{e}")
-            return redirect("bulk-stock")
+            return redirect("inventory:bulk-stock")
 
 
     # Step 2：使用者按「確認匯入」
@@ -158,7 +162,7 @@ def bulk_update_stock(request):
             try:
                 new_stock = int(new_stock_raw)
             except ValueError:
-                error_rows.append(f"無效的庫存數值（非整數）：{new_stock_raw}")
+                error_rows.append(f"無效的庫存數值：{new_stock_raw}")
                 continue
 
             # ✨ 查商品

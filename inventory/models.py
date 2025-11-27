@@ -28,7 +28,7 @@ class InventoryLog(models.Model):
     
 class BulkStockEntry(models.Model):
     class Meta:
-        managed = False                     # ❗ 不建立資料表
+        managed = False                     #  不建立資料表
         app_label = "inventory"
         verbose_name = "Bulk Stock Manager"
         verbose_name_plural = "Bulk Stock Manager"

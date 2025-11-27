@@ -41,28 +41,58 @@
           <hr>
 
           <!-- 價格 -->
+          <br>
           <p class="h4 fw-bold text-danger mb-4">$ {{ product.price }}</p>
+          <!-- 庫存量 -->
+          <br>
+          {% if product.stock > 5 %}
+            <p class="mb-3 fw-semibold text-secondary">
+              Stock: {{ product.stock }}
+            </p>
 
+          {% elif product.stock > 0 %}
+            <p class="mb-3 fw-semibold text-warning">
+              Only {{ product.stock }} left!
+            </p>
+
+          {% endif %}
+          {% if product.stock > 0 %}
           <!-- 數量 -->
+          <br>
           <div class="mb-3">
             <label class="fw-semibold d-block mb-1">Qty</label>
             <div class="input-group" style="width:120px;">
               <button class="btn btn-outline-secondary btn-sm minus-btn">−</button>
               <input type="text" id="product-qty" class="form-control text-center" 
-                     inputmode="numeric" pattern="[0-9]*" value="1" min="1" max="99">
+                    inputmode="numeric" pattern="[0-9]*" value="1" min="1" max="99">
               <button class="btn btn-outline-secondary btn-sm plus-btn">+</button>
             </div>
           </div>
 
           <!-- 加入購物車 -->
           <div class="mt-4">
-            <button type="button" id="add-button" value="{{ product.id }}" 
+            <button type="button" id="add-button" value="{{ product.id }}"
                     class="btn btn-primary px-5 py-2 fw-semibold rounded-pill shadow-sm">
               <i class="fa-solid fa-cart-plus me-2"></i>Add to cart
             </button>
           </div>
-        </div>
 
+        {% else %}
+
+          <!-- 售完 -->
+          <div class="mt-4">
+            <button type="button" class="btn btn-secondary px-5 py-2 fw-semibold rounded-pill shadow-sm"
+                    disabled>
+              <i class="fa-solid fa-ban me-2"></i>Sold Out
+            </button>
+          </div>
+
+        {% endif %}
+
+
+
+
+        </div>
       </div>
     </div>
 
