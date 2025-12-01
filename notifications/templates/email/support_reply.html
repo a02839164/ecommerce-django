@@ -1,0 +1,74 @@
+{% autoescape off %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Reply</title>
+  <style>
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; }
+    }
+  </style>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f4f4f4; font-family:Arial,sans-serif;">
+
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4;">
+  <tr>
+    <td align="center" style="padding:40px 0;">
+      <table role="presentation" width="600" class="container" cellspacing="0" cellpadding="0" 
+             style="background:#fff;border-radius:10px;box-shadow:0 4px 10px rgba(0,0,0,0.05);overflow:hidden;">
+
+        <!-- Header -->
+        <tr>
+          <td align="center" style="background:#0d71dc;color:#fff;padding:20px;">
+            <h1 style="margin:0;font-size:24px;">Buyria</h1>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:30px;color:#333;font-size:16px;line-height:1.6;">
+            <h2 style="margin-top:0;">New Support Reply</h2>
+
+            <p>Hello <strong>{{ user.username }}</strong>,</p>
+
+            <p>You have received a new reply to your support ticket 
+               <strong>#{{ ticket.subject }}</strong>.</p>
+
+            <p><strong>Support Team Message:</strong></p>
+
+            <div style="background:#f8f9fa;padding:15px;border-left:4px solid #0d71dc;border-radius:5px;">
+              {{ reply_message }}
+            </div>
+
+            <p style="text-align:center;margin:40px 0;">
+              <a href="https://buyriastore.com{% url 'ticket-detail' ticket.id %}"
+                 style="background:#0d71dc;color:#fff;padding:12px 25px;
+                        text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">
+                View Conversation
+              </a>
+            </p>
+
+            <p>We will continue to assist you as needed.</p>
+
+            <p>Best regards,<br><br><strong>The Buyria Support Team</strong></p>
+          </td>
+        </tr>
+
+        <!-- Footer -->
+        <tr>
+          <td align="center" style="background:#f8f9fa;padding:20px;font-size:12px;color:#777;">
+            © {{ now|date:"Y" }} Buyria. All rights reserved.
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>
+{% endautoescape %}

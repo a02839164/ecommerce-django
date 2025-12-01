@@ -230,12 +230,12 @@ def google_callback(request):
 
 
 
-@login_required(login_url='my-login')
+@login_required
 def dashboard(request):
     return render(request,'account/dashboard.html')
 
 
-@login_required(login_url='my-login')
+@login_required
 def profile_management(request):
 
     # Updating our user's email and profiles
@@ -259,7 +259,7 @@ def profile_management(request):
     return render(request, 'account/profile-management.html', context)
 
 
-@login_required(login_url='my-login')
+@login_required
 def profile_update(request):
 
     # Updating our user's email and profiles
@@ -297,7 +297,7 @@ def profile_update(request):
 
     return render(request, 'account/profile-update.html', context)
 
-@login_required(login_url='my-login')
+@login_required
 def delete_account(request):
 
     user = User.objects.get(id=request.user.id)
@@ -320,7 +320,7 @@ def delete_account(request):
 
     
 # Shipping view
-@login_required(login_url='my-login')
+@login_required
 def manage_shipping(request):
 
     try:                                                                  
@@ -356,7 +356,7 @@ def manage_shipping(request):
 
 
 
-@login_required(login_url='my-login')
+@login_required
 def track_orders(request):
 
     try:

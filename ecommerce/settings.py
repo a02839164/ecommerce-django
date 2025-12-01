@@ -61,6 +61,8 @@ INSTALLED_APPS = [
     'notifications',    #django app
     'analytics',        #django app
     'inventory',        #django app
+    'support',          #django app
+
     'mathfilters',
 
     'crispy_forms',     #Crispy forms
@@ -153,6 +155,9 @@ STATICFILES_DIRS = [BASE_DIR/'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'       # 先使用本地 ，等之後反向代理再上線 + urls.py urlpatterns += static
 
 MEDIA_ROOT = BASE_DIR / "media"   #保留 本地暫存／上傳來源
+
+LOGIN_URL = 'my-login'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

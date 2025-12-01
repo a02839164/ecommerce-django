@@ -1,0 +1,61 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+.dialog-card {
+    border-radius: 12px;
+    border: 1px solid #e3e3e3;
+    padding: 20px;
+    margin-bottom: 20px;
+    background: #fff;
+    word-break: break-all;
+    overflow-wrap: break-word; 
+}
+.dialog-card.staff {
+    background: #e8f3ff;
+}
+.dialog-header {
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+
+
+
+</style>
+
+<div class="container bg-white shadow-md p-5 mt-4 chat-container">
+    <div class="container bg-white shadow-sm p-4 rounded">
+        <a href="{% url 'support-center' %}" style="color: #717070c8;" class="btn btn-link">
+            <i class="fa-solid fa-arrow-left-long fa-2x"></i>
+        </a>
+        <br><br>
+        <h3>{{ ticket.subject }}</h3>
+    </div>
+    <br>
+    <hr>
+    <br>
+    <!-- 對話紀錄 -->
+    <div class="chat-box">
+        {% for msg in messages %}
+        <div class="dialog-card {% if msg.is_staff_reply %}staff{% endif %}">
+            <div class="dialog-header">
+                {% if msg.is_staff_reply %}
+                    Staff - {{ msg.user.profile.name }}
+                {% else %}
+                    You
+                {% endif %}
+                <span class="text-muted" style="font-size: 0.85rem;">
+                    ・ {{ msg.created_at|date:"Y-m-d H:i" }}
+                </span>
+            </div>
+            <div>{{ msg.message }}</div>
+        </div>
+        <br>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

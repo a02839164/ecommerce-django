@@ -17,6 +17,8 @@ urlpatterns = [
     path('account/',include('myaccount.urls')),
     #Payment app
     path('payment/',include('payment.urls')),
+    #Support app
+    path("support/", include("support.urls")),
     
     #Webhook URL
     path('webhooks/shippo/',shippo_webhook , name="shippo-webhook"),

@@ -18,6 +18,7 @@
             <p> Welcome , this is your dashboard where you can perform any of the following:</p>
             <li>Track your orders</li>
             <li>Manage your account</li>
+            <li>Contact our team</li>
         </div>
         <br>
         <div class="container bg-white shadow-md p-5 form-layout">
@@ -32,6 +33,14 @@
             <hr>
             <p>Update or delete your account </p>
             <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'profile-management' %}"> Profile management </a>
+            <br>
+        </div>
+        <br>
+        <div class="container bg-white shadow-md p-5 form-layout">
+            <h3><i class="fa-solid fa-comments"></i> &nbsp; Help & Support  </h3>
+            <hr>
+            <p> Manage your support requests and contact our team. </p>
+            <a class="btn btn-primary navbar-btn text-white" type="button"  href="{% url 'support-center' %}"> Support center </a>
             <br>
         </div>
         <br>
