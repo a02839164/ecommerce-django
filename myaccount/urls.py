@@ -1,8 +1,7 @@
 from django.urls import path
 from . import views
-
 from django.contrib.auth import views as auth_views
-
+from .forms import TurnstilePasswordResetForm
 
 urlpatterns = [
 
@@ -37,7 +36,7 @@ urlpatterns = [
     # Password management urls / Class-Based View in Django
     # reset
     # 1 )   Submit our email form
-    path('reset_password/', auth_views.PasswordResetView.as_view(template_name= 'account/password/password-reset.html'), name='reset_password' ),
+    path('reset_password/', auth_views.PasswordResetView.as_view(template_name= 'account/password/password-reset.html', form_class=TurnstilePasswordResetForm), name='reset_password' ),
     # 2 )   Success message  stating that apassword reset email was sent
     path('reset_password_sent/', auth_views.PasswordResetDoneView.as_view(template_name= 'account/password/password-reset-sent.html'), name= 'password_reset_done'),
     # 3 )   Password reset link

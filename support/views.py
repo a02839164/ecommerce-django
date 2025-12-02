@@ -9,7 +9,7 @@ from django.contrib import messages
 @login_required
 def support_center(request):
 
-    form = SupportTicketForm(request.POST or None)
+    form = SupportTicketForm(request.POST or None, request=request)
     tickets = SupportTicket.objects.filter(user=request.user).order_by("-created_at")  #先找出工單
 
     if request.method == "POST" and form.is_valid():

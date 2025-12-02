@@ -26,7 +26,7 @@ from payment.models import Order, OrderItem
 
 def register(request):
 
-    form = CreateUserForm(request.POST or None)
+    form = CreateUserForm(request.POST or None, request=request)
 
     if request.method == 'POST' and form.is_valid():
         
@@ -101,7 +101,7 @@ def email_verification_failed(request):
 # Login
 def my_login(request):
 
-    form = LoginForm(request, data=request.POST or None)
+    form = LoginForm(request=request, data=request.POST or None)
 
     if  request.method == 'POST' and form.is_valid():
 

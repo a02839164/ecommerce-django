@@ -29,6 +29,7 @@
                         {{ form.message|as_crispy_field }}
                     </div>
                 </div>
+                {% include "turnstile/field.html" %}
                 <div class="text-end mt-4">
                     <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
                         <i class="fa-solid fa-paper-plane me-2"></i> Submit Request

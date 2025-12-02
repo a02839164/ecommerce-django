@@ -5,26 +5,25 @@ from django import forms                                      #  User registrati
 from django.contrib.auth.forms import AuthenticationForm     # User authentication - Login
 from django.forms.widgets import PasswordInput, TextInput    # User authentication - Login
 
-from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.forms import PasswordResetForm
 
 from .models import Profile
 from django.core.exceptions import ValidationError
-
+from core.forms.turnstile import TurnstileFormMixin
 
 # Registration form
-class CreateUserForm(UserCreationForm):
+class CreateUserForm(TurnstileFormMixin ,UserCreationForm):
 
     class Meta:
 
         model = User
         fields= ['username', 'email', 'password1', 'password2']
 
-    def __init__(self, *args, **kwargs):
-        super(CreateUserForm, self).__init__(*args, **kwargs)
+    def __init__(self, *args, request=None, **kwargs):
 
+        super().__init__(*args, request=request, **kwargs)
         # Mark email field as required
         self.fields['email'].required = True
-
 
     #Email valdation
     def clean_email(self):
@@ -44,13 +43,18 @@ class CreateUserForm(UserCreationForm):
 
 # Login form
 
-class LoginForm(AuthenticationForm):
+class LoginForm(TurnstileFormMixin, AuthenticationForm):
 
     username = forms.CharField(widget=TextInput())
     password = forms.CharField(widget=PasswordInput())
 
-# Update form
+    def __init__(self, *args, request=None, **kwargs):
+        # 注意：AuthenticationForm 期望的是 request=...、data=...
+        super().__init__(request=request, *args, **kwargs)
 
+
+
+# Update form
 class UpdateForm(forms.ModelForm):
     
     password = None
@@ -101,3 +105,7 @@ class ProfileUpdateForm(forms.ModelForm):
         
         return photo
     
+
+class TurnstilePasswordResetForm(TurnstileFormMixin, PasswordResetForm):
+    def __init__(self, *args, request=None, **kwargs):
+        super().__init__(*args, request=request, **kwargs)

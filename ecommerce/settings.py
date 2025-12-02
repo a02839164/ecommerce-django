@@ -62,7 +62,7 @@ INSTALLED_APPS = [
     'analytics',        #django app
     'inventory',        #django app
     'support',          #django app
-
+    'core',             #django app
     'mathfilters',
 
     'crispy_forms',     #Crispy forms
@@ -71,7 +71,7 @@ INSTALLED_APPS = [
     'sendgrid_backend', # email
 ]
 
-# CRISPY_TEMPLATE_PACK = 'bootstrap4'
+# CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
@@ -99,9 +99,10 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 
-                'store.views.categories', #Updated全域context
-
+                #全域context
+                'store.views.categories',        
                 'cart.context_processors.cart',
+                'core.context_processors.turnstile.turnstile',
             ],
         },
     },
@@ -270,3 +271,9 @@ CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/0"
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+
+
+TURNSTILE_SITE_KEY = env("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = env("TURNSTILE_SECRET_KEY")
+TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"

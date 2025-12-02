@@ -26,6 +26,7 @@
                 {{form.password1|as_crispy_field}}
                 {{form.password2|as_crispy_field}}
                 <br>
+                {% include "turnstile/field.html" %}
                 <button type="submit" class="btn btn-outline-primary navbar-btn w-100 p-2"> &nbsp; Create account</button>
                 <div class="text-center my-3 text-muted">or</div>
                 <a href="{% url "google-login" %}" class="btn btn-outline-danger w-100">
