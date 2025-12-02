@@ -3,12 +3,11 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
 from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm
 from django.contrib.auth.models import User
-from django.contrib.auth.views import PasswordChangeView
 from .tokens import user_tokenizer_generate
 from .models import Profile
 from django.utils.encoding import force_bytes,force_str
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
-from notifications.handlers.account import send_verification_email, send_password_changed_email
+from notifications.handlers.account import send_verification_email
 from django.db import transaction
 from django.urls import reverse
 
@@ -23,13 +22,6 @@ from django.contrib import messages
 from payment.forms import ShippingForm
 from payment.models import ShippingAddress
 from payment.models import Order, OrderItem
-
-# def preview_email_template(request):
-#     context = {
-#         'user': request.user,
-#         'activation_link': 'https://example.com/email-verification/MjQ/3kg-xxxx/',
-#     }
-#     return render(request, 'account/registration/email-verification.html', context)
 
 
 def register(request):
@@ -381,13 +373,3 @@ def track_orders(request):
     except:
 
         return render(request, 'account/track-orders.html' )
-
-
-
-class MyPasswordChangeView(PasswordChangeView):
-
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        send_password_changed_email(self.request.user)
-        return response

@@ -1,4 +1,3 @@
-from notifications.handlers.order import send_refund_success_email
 from inventory.services import apply_inventory_sale, apply_inventory_refund
 import logging
 
@@ -26,7 +25,6 @@ class PaypalEventHandler:
                 apply_inventory_refund(order)
 
             order.payment_status = "REFUNDED"
-            send_refund_success_email(order)
 
         elif event_type == "CHECKOUT.ORDER.APPROVED":
             order.payment_status = "APPROVED"

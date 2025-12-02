@@ -17,7 +17,6 @@ from decimal import Decimal
 from shipping.api import create_shipment, buy_shipping_label
 from shipping.fake_webhook import simulate_fake_webhook
 from django.utils import timezone
-from notifications.handlers.order import send_order_confirm_email
 
 @login_required(login_url='my-login')
 def checkout(request):
@@ -204,7 +203,7 @@ def capture_paypal_order(request):
 
                     # Step 4: Celery 假追蹤狀態
                     simulate_fake_webhook(order.tracking_number)
-                    send_order_confirm_email(order)
+
             except Exception as e:
 
                 print("Shippo API error:", e)

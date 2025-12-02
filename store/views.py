@@ -54,7 +54,11 @@ def product_search(request):
 
     # 搜尋條件
     if query:
-        results = results.filter(title__icontains=query)
+        results = results.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(brand__icontains=query)
+        )
 
     if category_id:
         results = results.filter(category_id=category_id)

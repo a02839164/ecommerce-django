@@ -2,7 +2,6 @@ from django.contrib import admin
 from django import forms
 from .models import SupportTicket, SupportMessage
 from django.utils.safestring import mark_safe
-from notifications.handlers.support import send_support_reply_email
 
 
 #表單：客服回覆的欄位
@@ -81,7 +80,5 @@ class SupportTicketAdmin(admin.ModelAdmin):
             #首次回覆改狀態
             if obj.status == "OPEN":
                 obj.status = "PENDING"
-
-            send_support_reply_email(ticket=obj, reply_message=reply)
             
         super().save_model(request, obj, form, change)

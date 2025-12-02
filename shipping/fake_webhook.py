@@ -2,11 +2,8 @@ from shipping.tasks import send_fake_webhook_task
 
 
 def simulate_fake_webhook(tracking_number):
-    """
-    逐段模擬物流狀態：
-    PRE_TRANSIT → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED
-    """
 
+    #逐段模擬物流狀態：
     STAGES = [
         ("PRE_TRANSIT", 60),
         ("IN_TRANSIT", 120),

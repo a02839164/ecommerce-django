@@ -1,7 +1,7 @@
 import requests
 from django.conf import settings
 import json
-from shipping.tasks import send_fake_webhook_task
+
 
 def get_order_weight(order):
     
