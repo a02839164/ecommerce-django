@@ -110,21 +110,3 @@ class Cart():
         else:
             
             return Decimal('9.99')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

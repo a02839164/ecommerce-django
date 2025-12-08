@@ -2,9 +2,7 @@ from notifications.email_service import send_email_via_requests
 
 
 
-
-
-#######下單成功信#######  OK
+#下單成功
 def send_order_confirm_email(order):
     subject = f"Order #{order.id} Confirmation"
 
@@ -21,8 +19,7 @@ def send_order_confirm_email(order):
     )
 
 
-
-#######出貨通知信#######
+#出貨通知
 def send_shipping_update_email(order):
     subject = f"Order #{order.id} Shipping Update"
 
@@ -40,9 +37,7 @@ def send_shipping_update_email(order):
 
 
 
-
-
-######退款成功信#######  OK
+#退款成功
 def send_refund_success_email(order):
     subject = f"Order #{order.id} Refund Completed"
 

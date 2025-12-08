@@ -5,11 +5,6 @@ from django.template.loader import render_to_string
 
 #通用寄信引擎
 def send_email_via_requests(subject, to_email, template_base_name, context=None):
-
-    """
-    使用 requests 直接呼叫 SendGrid API 寄信。
-    template_base_name = service.py 帶入的template_base_name 
-    """
     
     SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
     context = context or {}

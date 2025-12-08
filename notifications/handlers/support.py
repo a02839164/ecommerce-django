@@ -2,7 +2,7 @@ from notifications.email_service import send_email_via_requests
 
 
 
-#######客服回覆信#######  
+#客服回覆信
 def send_support_reply_email(ticket, reply_message):
 
     user = ticket.user

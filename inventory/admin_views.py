@@ -67,12 +67,9 @@ def download_all_stock_csv(request):
 @staff_member_required
 def bulk_update_stock(request):
 
-
     # Step 0：下載目前庫存 CSV
     if "download_all" in request.GET:
         return download_all_stock_csv(request)
-
-
 
     # Step 1：收到 CSV → 預覽差異
     if request.method == "POST" and "preview" in request.POST:

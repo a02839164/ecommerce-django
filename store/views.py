@@ -56,7 +56,6 @@ def product_search(request):
     if query:
         results = results.filter(
             Q(title__icontains=query) |
-            Q(description__icontains=query) |
             Q(brand__icontains=query)
         )
 

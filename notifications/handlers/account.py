@@ -2,7 +2,7 @@ from notifications.email_service import send_email_via_requests
 
 
 
-#######註冊驗證信#######   OK
+#註冊驗證信
 def send_verification_email(user, activation_link):
 
     subject = "Account verification email"
@@ -19,7 +19,7 @@ def send_verification_email(user, activation_link):
     )
 
 
-#######密碼變更信#######
+#密碼變更信
 def send_password_changed_email(user):
     subject = "Your password has been changed"
 
