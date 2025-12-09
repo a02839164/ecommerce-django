@@ -29,30 +29,34 @@ def detect_password_change(sender, instance, **kwargs):
 
 
 #訂單成立信
+@receiver(pre_save, sender=Order)
+def remember_old_order_status(sender, instance, **kwargs):
+    if not instance.pk:
+        instance._old_payment_status = None
+    else:
+        old = Order.objects.filter(pk=instance.pk).only("payment_status").first()
+        instance._old_payment_status = old.payment_status if old else None
+
+
 @receiver(post_save, sender=Order)
 def send_order_status_email(sender, instance, created, **kwargs):
 
-    # 新建訂單（通常是 PENDING），不寄任何狀態信
+    # 新建訂單（PENDING）不寄信
     if created:
         return
 
-    # 取舊狀態（注意：這裡一定要查 DB）
-    old = Order.objects.filter(pk=instance.pk).only("payment_status").first()
-    if not old:
+    old_status = getattr(instance, "_old_payment_status", None)
+    new_status = instance.payment_status
+
+    # 狀態沒變 → 不寄
+    if old_status == new_status:
         return
 
-    # 只在「狀態真的改變」時處理
-    if old.payment_status == instance.payment_status:
-        return
-
-    # ✅ 狀態轉換後才寄信，而且保證在 transaction commit 之後才寄
     def _send():
-
-
-        if instance.payment_status in ["COMPLETED", "FAILED", "CANCELLED"]:
+        if new_status in ["COMPLETED", "FAILED", "CANCELLED"]:
             send_order_confirm_email(instance)
 
-        elif instance.payment_status == "REFUNDED":
+        elif new_status == "REFUNDED":
             send_refund_success_email(instance)
 
     transaction.on_commit(_send)
