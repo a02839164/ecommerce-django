@@ -72,6 +72,7 @@ def apply_inventory_sale(order):
 
 @transaction.atomic
 def apply_inventory_refund(order):
+    
     order = type(order).objects.select_for_update().get(id=order.id)
 
     if order.payment_status == "REFUNDED":
