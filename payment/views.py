@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from paypal.api import PaypalService
 from decimal import Decimal
 
+from inventory.services import reserve_stock
 from shipping.api import create_shipment, buy_shipping_label
 from shipping.fake_webhook import simulate_fake_webhook
 from django.utils import timezone
@@ -66,10 +67,10 @@ def create_paypal_order(request):
         product = item['product']
         qty = item['qty']
 
-        if product.stock <= 0:
+        if product.available_stock <= 0:
             return JsonResponse({'error': f'{product.title} 已售完'}, status=400)
 
-        if qty > product.stock:
+        if qty > product.available_stock:
             return JsonResponse({'error': f'{product.title} 庫存不足'}, status=400)
 
 
@@ -178,6 +179,27 @@ def capture_paypal_order(request):
                     price= item['price'],
                     user = request.user
                 )
+
+            try:
+                reserve_stock(order)
+
+            except ValueError as e:
+
+                # 庫存不足 → 自動退款
+
+                try:
+                    svc.refund_capture(
+                        paypal_capture_id,
+                        amount=str(paypal_total),
+                        currency=paypal_cur,
+                    )
+                finally:
+                    order.payment_status = "FAILED"
+                    order.save()
+                    return JsonResponse(
+                        {'error': f'Stock error: {str(e)}. We have refunded your payment.'},
+                        status=409
+                    )
 
             try:
                 # Step 1: 建立 Shipment（Shippo 回傳 rates）

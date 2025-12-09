@@ -4,7 +4,7 @@ from notifications.email_service import send_email_via_requests
 
 #下單成功
 def send_order_confirm_email(order):
-    subject = f"Order #{order.id} Confirmation"
+    subject = f"Order #{order.id} {order.payment_status} Confirmation"
 
     context = {
         "order": order,

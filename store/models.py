@@ -31,6 +31,7 @@ class Product(models.Model):
     discountpercentage= models.FloatField(blank=True, null=True)
 
     stock = models.PositiveIntegerField(default=0)
+    reserved_stock = models.IntegerField(default=0)
     sku = models.CharField(max_length=100, blank=True, null=True)
     weight = models.FloatField(blank=True, null=True)
     dimensions = models.JSONField(blank=True, null=True)
@@ -43,6 +44,7 @@ class Product(models.Model):
     image = models.JSONField(blank=True, null=True)
     
     is_fake = models.BooleanField(default=False)
+
     class Meta:
 
         verbose_name_plural = 'products' 
@@ -72,3 +74,8 @@ class Product(models.Model):
             
             self.slug = slug
         super().save(*args, **kwargs)
+
+    @property
+    def available_stock(self):                  #真正可賣的數量 = 實際庫存 - 已預扣
+
+        return self.stock - self.reserved_stock

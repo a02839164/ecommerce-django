@@ -111,12 +111,12 @@
 
     <div class="stock-status">
         目前庫存：
-        {% if product.stock <= 0 %}
-            <span class="status-red">{{ product.stock }}（已售完）</span>
-        {% elif product.stock <= 5 %}
-            <span class="status-orange">{{ product.stock }}（低庫存）</span>
+        {% if product.available_stock <= 0 %}
+            <span class="status-red">{{ product.available_stock }}（已售完）</span>
+        {% elif product.available_stock <= 5 %}
+            <span class="status-orange">{{ product.available_stock }}（低庫存）</span>
         {% else %}
-            <span class="status-green">{{ product.stock }} 件</span>
+            <span class="status-green">{{ product.available_stock }} 件</span>
         {% endif %}
     </div>
 

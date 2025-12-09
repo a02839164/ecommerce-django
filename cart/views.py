@@ -34,14 +34,14 @@ def cart_add(request):
     product = get_object_or_404(Product,id=product_id)
 
     # --- 庫存檢查：防止加入沒庫存的商品 ---
-    if product.stock <= 0:
+    if product.available_stock <= 0:
         return JsonResponse({'error': '商品已售完'}, status=400)
     
     #計算購物車內已有數量 + 新增量 > 庫存 → 禁止加入
     current_cart_qty = cart.cart.get(str(product.id), {}).get("qty", 0)
 
     # 4. 已有數量 + 新增量 > 庫存 → 禁止
-    if current_cart_qty + product_quantity > product.stock:
+    if current_cart_qty + product_quantity > product.available_stock:
         return JsonResponse({'error': '超過庫存數量'}, status=400)
 
     cart.add(product=product, product_qty=product_quantity)   # 更新使用者的購物車資料到 session
@@ -82,7 +82,7 @@ def cart_update(request):
 
     product = get_object_or_404(Product, id=product_id)
 
-    if product.stock <= 0:
+    if product.available_stock <= 0:
 
         return JsonResponse({'error': '商品已售完'}, status=400)
 
@@ -91,7 +91,7 @@ def cart_update(request):
         return JsonResponse({'error': '商品數量不能小於 1'}, status=400)
 
     # 3. 更新數量不能超過庫存
-    if product_quantity > product.stock:
+    if product_quantity > product.available_stock:
         return JsonResponse({'error': '超過庫存數量'}, status=400)
 
 

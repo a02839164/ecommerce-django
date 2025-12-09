@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User
-
+from django.db import transaction
 from payment.models import Order       
 from support.models import SupportMessage  
 
@@ -30,10 +30,32 @@ def detect_password_change(sender, instance, **kwargs):
 
 #訂單成立信
 @receiver(post_save, sender=Order)
-def send_order_email(sender, instance, created, **kwargs):
-    if created:
-        send_order_confirm_email(instance)
+def send_order_status_email(sender, instance, created, **kwargs):
 
+    # 新建訂單（通常是 PENDING），不寄任何狀態信
+    if created:
+        return
+
+    # 取舊狀態（注意：這裡一定要查 DB）
+    old = Order.objects.filter(pk=instance.pk).only("payment_status").first()
+    if not old:
+        return
+
+    # 只在「狀態真的改變」時處理
+    if old.payment_status == instance.payment_status:
+        return
+
+    # ✅ 狀態轉換後才寄信，而且保證在 transaction commit 之後才寄
+    def _send():
+
+
+        if instance.payment_status in ["COMPLETED", "FAILED", "CANCELLED"]:
+            send_order_confirm_email(instance)
+
+        elif instance.payment_status == "REFUNDED":
+            send_refund_success_email(instance)
+
+    transaction.on_commit(_send)
 
 
 #出貨通知信
@@ -54,20 +76,6 @@ def detect_shipping_status_change(sender, instance, **kwargs):
     if instance.shipping_status == "IN_TRANSIT":
         send_shipping_update_email(instance)
 
-
-
-#寄退款成功信
-@receiver(pre_save, sender=Order)
-def detect_refund(sender, instance, **kwargs):
-
-    if not instance.pk:
-        return
-
-    old_order = Order.objects.get(pk=instance.pk)
-
-    # 偵測 payment_status 是否從非 REFUNDED → REFUNDED
-    if old_order.payment_status != instance.payment_status and instance.payment_status == "REFUNDED":
-        send_refund_success_email(instance)
 
 
 

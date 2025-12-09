@@ -45,18 +45,18 @@
           <p class="h4 fw-bold text-danger mb-4">$ {{ product.price }}</p>
           <!-- 庫存量 -->
           <br>
-          {% if product.stock > 5 %}
+          {% if product.available_stock > 5 %}
             <p class="mb-3 fw-semibold text-secondary">
-              Stock: {{ product.stock }}
+              Stock: {{ product.available_stock }}
             </p>
 
-          {% elif product.stock > 0 %}
+          {% elif product.available_stock > 0 %}
             <p class="mb-3 fw-semibold text-warning">
-              Only {{ product.stock }} left!
+              Only {{ product.available_stock }} left!
             </p>
 
           {% endif %}
-          {% if product.stock > 0 %}
+          {% if product.available_stock > 0 %}
           <!-- 數量 -->
           <br>
           <div class="mb-3">

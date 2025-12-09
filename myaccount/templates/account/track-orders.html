@@ -41,6 +41,8 @@
             <span class="badge bg-danger">退款處理中</span>
           {% elif entry.order.payment_status == "REFUNDED" %}
             <span class="badge bg-danger">已退款</span>
+          {% elif entry.order.payment_status == "CANCELLED" %}
+            <span class="badge bg-danger">已取消</span>
           {% else %}
             <span class="badge bg-danger">未付款</span>
           {% endif %}
