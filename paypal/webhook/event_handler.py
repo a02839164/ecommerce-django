@@ -32,6 +32,8 @@ class PaypalEventHandler:
             if order.payment_status != "REFUNDED":
                 apply_inventory_refund(order)   
 
+        order.save(update_fields=["verify_webhook"])
+
         logger.info(
             f"Order #{order.id} UPDATED → "
             f"payment_status={order.payment_status}, "
