@@ -195,7 +195,7 @@ class CheckoutService:
                             "tracking_updated_at",
                         ]
                     )
-                    simulate_fake_webhook.delay(order.tracking_number)
+                    simulate_fake_webhook(order.tracking_number)
 
         except Exception as e:
             # ⚠️ 物流錯誤不回滾付款（避免實務災難）
