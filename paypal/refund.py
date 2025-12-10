@@ -1,12 +1,10 @@
 # 管理後台 / Refund 按鈕使用的邏輯單元
-
-
 from django.contrib import messages
-from paypal.api import PaypalService
-from payment.models import Order # 假設 Order 已經被 import
+from paypal.services import PaypalService
+from payment.models import Order 
 
-# 這裡我們不再需要 @require_POST 和 redirect，因為它不再是獨立的 View
-def process_single_order_refund(request, order_id):
+
+def process_single_order_refund(request, order_id):  # 不需要 @require_POST 和 redirect，因為它不是獨立的 View
     """
     處理單筆訂單的退款邏輯，供 Admin Action 內部呼叫。
     接受 request (用於 messages) 和 order_id。

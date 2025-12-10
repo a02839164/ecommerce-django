@@ -4,7 +4,7 @@ from django.utils import timezone
 from django.db import transaction
 
 from payment.models import Order
-from inventory.services import release_stock
+from inventory.services import InventoryService
 
 
 class Command(BaseCommand):
@@ -59,7 +59,7 @@ class Command(BaseCommand):
                         continue
 
                     # ✅ 正式釋放庫存
-                    release_stock(order)
+                    InventoryService.release_stock(order)
 
                     released_orders.append(order.id)
 

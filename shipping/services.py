@@ -1,18 +1,7 @@
+# shipping/services.py
+
 import requests
 from django.conf import settings
-import json
-
-
-def get_order_weight(order):
-    
-    total = 0
-
-    for item in order.orderitem_set.all():
-
-        total += item.product.weight * item.quantity
-
-    return total
-
 
 
 SHIPPO_API_URL = "https://api.goshippo.com"
@@ -21,9 +10,17 @@ HEADERS = {
     "Content-Type": "application/json",
 }
 
+
+def get_order_weight(order):
+    total = 0
+    for item in order.orderitem_set.all():
+        total += item.product.weight * item.quantity
+    return total
+
+
 def create_shipment(order, address1, address2, city, state, zipcode):
     """
-    建立 Shipment，Shippo 回傳所有可選的運送方案（rates）。
+    建立 Shipment，Shippo 回傳所有可選的運送方案（rates）
     """
     url = f"{SHIPPO_API_URL}/shipments/"
 
@@ -53,7 +50,7 @@ def create_shipment(order, address1, address2, city, state, zipcode):
                 "width": "15",
                 "height": "10",
                 "distance_unit": "cm",
-                "weight": str(get_order_weight(order)),  # g
+                "weight": str(get_order_weight(order)),  # 單位 g
                 "mass_unit": "g",
             }
         ],
@@ -61,6 +58,7 @@ def create_shipment(order, address1, address2, city, state, zipcode):
     }
 
     response = requests.post(url, headers=HEADERS, json=data)
+    response.raise_for_status()
     return response.json()
 
 
@@ -77,5 +75,5 @@ def buy_shipping_label(rate_id):
     }
 
     response = requests.post(url, headers=HEADERS, json=data)
+    response.raise_for_status()
     return response.json()
-

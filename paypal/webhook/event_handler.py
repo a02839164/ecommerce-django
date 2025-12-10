@@ -1,4 +1,5 @@
-from inventory.services import apply_inventory_sale, apply_inventory_refund, release_stock
+# from inventory.services import apply_inventory_sale, apply_inventory_refund, release_stock
+from inventory.services import InventoryService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,7 +16,7 @@ class PaypalEventHandler:
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
 
             if order.payment_status != "COMPLETED":  # 避免重複扣
-                apply_inventory_sale(order)          # 正式扣庫存
+                InventoryService.apply_inventory_sale(order)          # 正式扣庫存
         
         elif event_type in [
             "CHECKOUT.ORDER.CANCELLED",
@@ -24,13 +25,13 @@ class PaypalEventHandler:
         ]:
 
             if order.payment_status not in ["CANCELLED", "FAILED", "EXPIRED"]:
-                release_stock(order)                  # 釋放預扣
+                InventoryService.release_stock(order)                  # 釋放預扣
 
 
         elif event_type == "PAYMENT.CAPTURE.REFUNDED":
 
             if order.payment_status != "REFUNDED":
-                apply_inventory_refund(order)   
+                InventoryService.apply_inventory_refund(order)   
 
         order.save(update_fields=["verify_webhook"])
 

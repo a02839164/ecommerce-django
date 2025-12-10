@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
-from .services import increase_stock, decrease_stock
+from .services import InventoryService
 from store.models import Product
 from inventory.models import InventoryLog
 from django.utils import timezone
@@ -29,11 +29,11 @@ def adjust_stock(request, product_id):
         try:
             if qty > 0:
 
-                increase_stock(product.id, qty, note=note, user=request.user)
+                InventoryService.increase_stock(product.id, qty, note=note, user=request.user)
 
             else:
                 
-                decrease_stock(product.id, abs(qty), note=note, user=request.user)
+                InventoryService.decrease_stock(product.id, abs(qty), note=note, user=request.user)
 
             messages.success(request, "庫存調整成功")
             return redirect("admin:store_product_changelist")
