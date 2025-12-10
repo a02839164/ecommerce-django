@@ -3,6 +3,7 @@ from payment.models import Order, OrderItem
 from paypal.services import PaypalService
 from inventory.services import InventoryService
 from shipping.services import create_shipment, buy_shipping_label
+from shipping.fake_webhook import simulate_fake_webhook
 from decimal import Decimal
 from django.utils import timezone
 from django.db import transaction
@@ -194,6 +195,7 @@ class CheckoutService:
                             "tracking_updated_at",
                         ]
                     )
+                    simulate_fake_webhook.delay(order.tracking_number)
 
         except Exception as e:
             # ⚠️ 物流錯誤不回滾付款（避免實務災難）
