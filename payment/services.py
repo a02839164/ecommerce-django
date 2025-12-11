@@ -2,11 +2,13 @@
 from payment.models import Order, OrderItem
 from paypal.services import PaypalService
 from inventory.services import InventoryService
+from core.utils.rate_limit import CheckoutRateLimiter
 from shipping.services import create_shipment, buy_shipping_label
 from shipping.fake_webhook import simulate_fake_webhook
 from decimal import Decimal
 from django.utils import timezone
 from django.db import transaction
+
 
 class CheckoutService:
 
@@ -66,11 +68,17 @@ class CheckoutService:
         # -------------------------------------------------
         # 0️⃣ 基本防呆
         # -------------------------------------------------
+
+        if not user or not user.is_authenticated:
+            raise ValueError("Login required")
+        
+        if Order.objects.filter(paypal_order_id=order_id).exists():
+            raise ValueError("Duplicate PayPal order")
+        
         if len(cart) == 0:
             raise ValueError("Cart is empty")
 
         if not CheckoutService._validate_required(order_id, name, email, address1, address2, city):
-
             raise ValueError("Missing fields")
 
         total_cost = cart.get_total() + cart.get_shipping_fee()
@@ -125,7 +133,7 @@ class CheckoutService:
             shipping_fee=cart.get_shipping_fee(),
             amount_paid=total_cost,
 
-            user=user if user.is_authenticated else None,
+            user=user,
 
             paypal_order_id=result.id,
             payer_id=getattr(result.payer, "payer_id", None),
@@ -139,7 +147,7 @@ class CheckoutService:
                 product=item["product"],
                 quantity=item["qty"],
                 price=item["price"],
-                user=user if user.is_authenticated else None,
+                user=user,
             )
 
         # -------------------------------------------------
