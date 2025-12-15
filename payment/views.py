@@ -8,7 +8,6 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from payment.services import CheckoutService
 from core.utils.rate_limit import CheckoutRateLimiter
-from django.db import IntegrityError
 # from paypal.services import PaypalService
 # from inventory.services import reserve_stock
 # from shipping.api import create_shipment, buy_shipping_label
