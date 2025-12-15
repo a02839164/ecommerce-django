@@ -1,10 +1,14 @@
 # Django Production-Ready E-Commerce Platform
 
+
 [![Live Demo](https://img.shields.io/badge/Live-Demo-brightgreen?style=for-the-badge)](https://buyriastore.com)
-[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-5.x-092E20?style=for-the-badge&logo=django)](https://www.djangoproject.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud_SQL-336791?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
-[![GCP](https://img.shields.io/badge/GCP-Compute_Engine-4285F4?style=for-the-badge&logo=google-cloud)](https://cloud.google.com/)
+[![中文](https://img.shields.io/badge/Read%20this-中文-brightgreen?style=for-the-badge)](README.zh-TW.md)
+
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.x-blue?style=for-the-badge)](https://www.djangoproject.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud_SQL-blue?style=for-the-badge)](https://www.postgresql.org/)
+[![GCP](https://img.shields.io/badge/GCP-Compute_Engine-blue?style=for-the-badge)](https://cloud.google.com/)
+
 
 
 ## Project Overview
