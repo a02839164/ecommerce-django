@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('google/login/', views.google_login, name='google-login'),
     path('google/callback/', views.google_callback, name='google-callback'),
-   
+
 
     # Email verification URL's
     path('email-verification/<str:uidb64>/<str:token>/', views.email_verification, name='email-verification'),

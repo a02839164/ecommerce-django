@@ -7,7 +7,7 @@ from django.urls import reverse
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
 
-    prepopulated_fields = {'slug':('name',)}
+    prepopulated_fields = {'slug':('name',)}   # 輔助功能 根據name欄輸入，即時自動產生slug欄的值
 
 
 @admin.register(Product)

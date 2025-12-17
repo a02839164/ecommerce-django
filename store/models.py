@@ -16,7 +16,7 @@ class Category(models.Model):
     
     def get_absolute_url(self):
 
-        return reverse('list-category', args=[self.slug])
+        return reverse('list-category', args=[self.slug])     # 讓 template 乾淨、不會知道太多 routing 細節
 
 class Product(models.Model):
     #建立關聯
@@ -62,6 +62,7 @@ class Product(models.Model):
 
         return reverse('product-info', args=[self.slug])
     
+    #override
     def save(self, *args, **kwargs):
 
         if not self.slug:

@@ -38,6 +38,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
 
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
 
+SITE_DOMAIN = env("SITE_DOMAIN",default="http://127.0.0.1:8000")# 預設給 local 用
 
 # Application definition
 
@@ -100,7 +101,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 
                 #全域context
-                'store.views.categories',        
+                'store.context_processors.categories',        
                 'cart.context_processors.cart',
                 'core.context_processors.turnstile.turnstile',
             ],

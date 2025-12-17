@@ -4,6 +4,7 @@ from django.core.paginator import Paginator
 from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm
 from django.contrib.auth.models import User
 from .tokens import user_tokenizer_generate
+from django.contrib.auth.tokens import default_token_generator
 from .models import Profile
 from django.utils.encoding import force_bytes,force_str
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
@@ -28,39 +29,19 @@ def register(request):
 
     form = CreateUserForm(request.POST or None, request=request)
 
-    if request.method == 'POST' and form.is_valid():
-        
-        with transaction.atomic():
+    if request.method == "POST" and form.is_valid():
 
+        with transaction.atomic():
             user = form.save(commit=False)
             user.is_active = False
             user.save()
-        
-            # Email verification setup (template)
-            activation_link = request.build_absolute_uri(
-                reverse(
-                    'email-verification', 
-                    kwargs={
-                        'uidb64':urlsafe_base64_encode(force_bytes(user.pk)),
-                        'token': user_tokenizer_generate.make_token(user),
-                    }
-                )
-            )
 
-            try:
+        return redirect("email-verification-sent")
 
-                send_verification_email(user, activation_link)
-
-            except Exception as e:
-
-                user.delete()
-
-            return redirect('email-verification-sent')
-
-       
     context = {'form':form}
 
-    return render(request, 'account/registration/register.html', context)
+    return render(request,"account/registration/register.html",context)
+
 
 
 
@@ -74,11 +55,16 @@ def email_verification(request,uidb64, token):
 
         user = None
 
+    # is_active
+    if user and user.is_active:
+
+        return redirect("email-verification-success")
+
     # Success
-    if user and user_tokenizer_generate.check_token(user, token):
+    if user and default_token_generator.check_token(user, token):
 
         user.is_active = True
-        user.save()
+        user.save(update_fields=["is_active"])
         return redirect('email-verification-success')
     
     # Failed

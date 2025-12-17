@@ -5,9 +5,23 @@ from django.db import transaction
 from payment.models import Order       
 from support.models import SupportMessage  
 
-from notifications.handlers.account import send_password_changed_email
+from notifications.handlers.account import send_verification_email, send_password_changed_email
 from notifications.handlers.order import send_order_confirm_email, send_shipping_update_email, send_refund_success_email
 from notifications.handlers.support import send_support_reply_email
+
+
+@receiver(post_save, sender=User)
+def send_account_activation_email(sender, instance, created, **kwargs):
+    """
+    新註冊且尚未啟用帳號 → 寄送驗證信
+    """
+    if not created:
+        return
+
+    if instance.is_active:
+        return
+
+    transaction.on_commit(lambda: send_verification_email(instance))
 
 
 #變更密碼通知信

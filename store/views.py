@@ -12,7 +12,6 @@ def store(request):
     hot_products = get_hot_products(days=7, limit=10)
     recent_views = get_recent_products(request, limit=10)
 
-
     context = {
         'all_product':all_product,
         'hot_products': hot_products,
@@ -22,12 +21,7 @@ def store(request):
     return render(request, 'store/store.html', context)
 
 
-def categories(request):
-    all_categories = Category.objects.all()
-
-    return {'all_categories': all_categories}
-
-def list_category(request, category_slug=None):
+def list_category(request, category_slug):
     category = get_object_or_404(Category,slug = category_slug)
     products = Product.objects.filter(category=category, is_fake=False)
     context = {'category':category ,'products':products}
@@ -46,13 +40,13 @@ def product_info(request, product_slug):
 
 
 def product_search(request):
-
-    query = request.GET.get('q', '').strip()         #取得name = q裡面的value，預設空白，  .strip() 去掉前後空白
-    category_id = request.GET.get('category', '')    #取得name = category 裡面的value，預設空白
-    sort_by = request.GET.get('sort', 'relevance')   #取得name = sort 裡面的value，預設「相似度」
+                                                     # 取得搜尋模板裡的name=
+    query = request.GET.get('q', '').strip()         # q裡面的value，預設空白，  .strip() 去掉前後空白    -base.html
+    category_id = request.GET.get('category', '')    # category 裡面的value，預設空白                    -base.html
+    sort_by = request.GET.get('sort', 'relevance')   # sort 裡面的value，預設「相似度」                  -product-search.html
     results = Product.objects.only("id", "title", "price", "slug", "thumbnail", "category_id")
 
-    # 搜尋條件
+    # 搜尋條件 .filter() 累積條件
     if query:
         results = results.filter(
             Q(title__icontains=query) |
@@ -72,7 +66,7 @@ def product_search(request):
 
     # 限制最多結果（加速）
     MAX_RESULTS = 1000
-    results = results[:MAX_RESULTS]
+    results = results[:MAX_RESULTS]                 # SQL LIMIT 1000
 
     # 分頁
     paginator = Paginator(results, 18)
