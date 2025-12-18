@@ -1,6 +1,6 @@
 from django.test import TestCase
 from django.core.cache import cache
-from core.utils.rate_limit import CheckoutRateLimiter
+from core.security.rate_limit.limiter import CheckoutRateLimiter
 
 
 class CheckoutRateLimiterTest(TestCase):

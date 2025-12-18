@@ -23,7 +23,7 @@ class SupportViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
 
 
-    @patch("core.forms.turnstile.verify_turnstile", return_value=(True, {}))
+    @patch("core.security.turnstile.forms.verify_turnstile", return_value=(True, {}))
     def test_support_ticket_create_success(self, mock_turnstile):
         url = reverse("support-center")
 
@@ -48,7 +48,7 @@ class SupportViewTest(TestCase):
         self.assertEqual(message.message, "This is a test message")
 
 
-    @patch("core.forms.turnstile.verify_turnstile", return_value=(False, {"error": "invalid"}))
+    @patch("core.security.turnstile.forms.verify_turnstile", return_value=(False, {"error": "invalid"}))
     def test_support_ticket_turnstile_fail(self, mock_turnstile):
         url = reverse("support-center")
 

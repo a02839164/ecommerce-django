@@ -26,6 +26,9 @@
                 <a href="{% url 'reset_password' %}"> Forgot password ? </a>
                 <br>
                 <br>
+                <a href="{% url 'resend-verification' %}">Didn't receive the email?</a>
+                <br>
+                <br>
                 <div class= "text-danger">
                     {{ form.non_field_errors }}
                 </div>

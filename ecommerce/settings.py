@@ -103,7 +103,8 @@ TEMPLATES = [
                 #全域context
                 'store.context_processors.categories',        
                 'cart.context_processors.cart',
-                'core.context_processors.turnstile.turnstile',
+                # 'core.context_processors.turnstile.turnstile',
+                'core.security.turnstile.context_processors.turnstile',
             ],
         },
     },
@@ -176,7 +177,7 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@buyriastore.com"
 
 SENDGRID_SANDBOX_MODE_IN_DEBUG = False
 
-SENDGRID_ECHO_TO_STDOUT = True
+SENDGRID_ECHO_TO_STDOUT = False
 
 
 

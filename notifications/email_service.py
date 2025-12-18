@@ -32,7 +32,6 @@ def send_email_via_requests(subject, to_email, template_base_name, context=None)
 
     response = requests.post(SENDGRID_API_URL, headers=headers, json=payload)
 
-    # 若你想在 console 印出 API 回應，可以加這一行
     print("SendGrid API Response:", response.status_code, response.text)
 
     response.raise_for_status()  # 失敗會直接 raise，成功會安靜回傳

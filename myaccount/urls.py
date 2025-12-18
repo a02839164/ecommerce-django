@@ -19,7 +19,7 @@ urlpatterns = [
     path('email-verification-sent/', views.email_verification_sent, name='email-verification-sent'),
     path('email-verification-success/', views.email_verification_success, name='email-verification-success'),
     path('email-verification-failed/', views.email_verification_failed, name='email-verification-failed'),
-
+    path("email-verification/resend/",views.resend_verification_by_email,name="resend-verification",),
     # Dashboard / profile urls
     path('dashboard/', views.dashboard, name='dashboard'),
     # Track orders url
@@ -36,7 +36,12 @@ urlpatterns = [
     # Password management urls / Class-Based View in Django
     # reset
     # 1 )   Submit our email form
-    path('reset_password/', auth_views.PasswordResetView.as_view(template_name= 'account/password/password-reset.html', form_class=TurnstilePasswordResetForm), name='reset_password' ),
+    path('reset_password/', 
+        auth_views.PasswordResetView.as_view(
+            template_name= 'account/password/password-reset.html',
+            html_email_template_name="email/password_reset_email.html",
+            form_class=TurnstilePasswordResetForm),
+        name='reset_password'),
     # 2 )   Success message  stating that apassword reset email was sent
     path('reset_password_sent/', auth_views.PasswordResetDoneView.as_view(template_name= 'account/password/password-reset-sent.html'), name= 'password_reset_done'),
     # 3 )   Password reset link

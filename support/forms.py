@@ -1,7 +1,7 @@
 # support/forms.py
 from django import forms
 from .models import SupportTicket
-from core.forms.turnstile import TurnstileFormMixin
+from core.security.turnstile.forms import TurnstileFormMixin
 
 
 class SupportTicketForm(TurnstileFormMixin, forms.ModelForm):

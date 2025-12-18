@@ -2,7 +2,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from core.utils.turnstile import verify_turnstile
+from core.security.turnstile.service import verify_turnstile
 
 
 class TurnstileFormMixin(forms.Form):

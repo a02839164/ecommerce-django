@@ -1,29 +1,26 @@
 import requests
 from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
-from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm
+from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm, ResendVerificationEmailForm 
 from django.contrib.auth.models import User
-from .tokens import user_tokenizer_generate
 from django.contrib.auth.tokens import default_token_generator
 from .models import Profile
-from django.utils.encoding import force_bytes,force_str
-from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
-from notifications.handlers.account import send_verification_email
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from django.db import transaction
-from django.urls import reverse
-
 from django.contrib.auth import login, logout
 from django.conf import settings
 from urllib.parse import urlencode
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-
 from django.contrib import messages
 
 from payment.forms import ShippingForm
-from payment.models import ShippingAddress
-from payment.models import Order, OrderItem
-
+from payment.models import ShippingAddress, Order, OrderItem
+from core.security.email_verification.service import EmailVerificationService
+from django.views.decorators.http import require_http_methods
+from django.core.exceptions import ValidationError
+from .google import exchange_code_for_user, GoogleOAuthError
 
 def register(request):
 
@@ -43,11 +40,8 @@ def register(request):
     return render(request,"account/registration/register.html",context)
 
 
-
-
 def email_verification(request,uidb64, token):
     try:
-
         unique_id = force_str(urlsafe_base64_decode(uidb64))
         user = User.objects.get(pk=unique_id)
 
@@ -73,16 +67,39 @@ def email_verification(request,uidb64, token):
 
 
 def email_verification_sent(request):
-    
     return render(request, 'account/registration/email-verification-result.html', {'status':'sent'})
 
 def email_verification_success(request):
-    
     return render(request, 'account/registration/email-verification-result.html', {'status':'success'})
 
 def email_verification_failed(request):
-    
     return render(request, 'account/registration/email-verification-result.html', {'status':'failed'})
+
+
+@require_http_methods(["GET", "POST"])
+def resend_verification_by_email(request):
+
+    form = ResendVerificationEmailForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+
+        email = form.cleaned_data["email"]
+        user = User.objects.filter(email=email).first()
+
+        if user:
+            try:
+                EmailVerificationService.send(user)
+                
+            except ValidationError:
+
+                pass
+
+        messages.info(request,"If the email exists, a verification email has been sent.")
+        return redirect("my-login")
+    
+    context = {'form':form}
+
+    return render(request, "account/registration/resend_verification.html", context)
+
 
 # Login
 def my_login(request):
@@ -103,7 +120,6 @@ def my_login(request):
             messages.success(request, f'Welcome back, {user.username}!')
             return redirect('dashboard')
             
-    
     context = {'form':form}
     return render (request,'account/my-login.html',context)
 
@@ -120,90 +136,101 @@ def user_logout(request):
 
 def google_login(request):
 
-    #導向google授權
-    google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'   # 登入請求入口
 
-    params = {
-        "response_type": "code",
+    google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'   # 授權端點
+
+    params = {                                          #請求參數
+        "response_type": "code",                            # 一次性授權憑證
         "client_id": settings.GOOGLE_CLIENT_ID,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,   # 回傳授權碼的網址
-        "scope": "openid email profile",                # 要哪些資料
-        "access_type": "online",                       # 存取模式； 若要長期登入或自動同步 Google 資料」 - offline
-        "prompt": "select_account",                     # 每次登入都可選帳號
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,       # 回傳授權碼的網址
+        "scope": "openid email profile",                    # 需要的資料
+        "access_type": "online",                            # 存取模式； 若要長期登入或自動同步 Google 資料」 - offline
+        "prompt": "select_account",                         # 每次登入都可選帳號
     }
 
-    auth_url = f"{google_auth_url}?{urlencode(params)}"
+    auth_url = f"{google_auth_url}?{urlencode(params)}" # urlencode把 dict轉成URL可使用的字串
 
     return redirect(auth_url)
 
+#google_login負責產生授權網址並 redirect，真正的登入與帳號處理在 callback 裡完成。」
 #登入成功後 依照Google OAuth 建立 OAuth 憑證時設定的Authorized redirect URIs 導回
 
 def google_callback(request):
-
-    #google回傳code 交換 token 取得使用者資料
     code = request.GET.get("code")
+    if not code:
+        return HttpResponse("Missing code", status=400)
 
-    if not code :
+    try:
+        user = exchange_code_for_user(code)
+    except GoogleOAuthError as e:
+        return HttpResponse(str(e), status=400)
 
-        return HttpResponse("未收到code , 登入失敗", status=400)
-    
-    # 取得 access_token
-    token_url = "https://oauth2.googleapis.com/token"
-    data = {
-        "code": code,
-        "client_id": settings.GOOGLE_CLIENT_ID,
-        "client_secret": settings.GOOGLE_CLIENT_SECRET,
-        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
-        "grant_type": "authorization_code",
-    }
-    token_response = requests.post(token_url, data=data)
-
-    if token_response.status_code != 200:
-        return HttpResponse(f"Token 回傳錯誤: {token_response.text}", status = 400)
-
-    token_json = token_response.json()
-    access_token = token_json.get("access_token")
-    if not access_token:
-        return HttpResponse("無法取得 access_token" , status=400)
-    
-    # 取得使用者資料
-    userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-    headers = {"Authorization":f"Bearer {access_token}"}
-    userinfo_response = requests.get(userinfo_url,headers=headers)
-
-    if userinfo_response.status_code != 200:
-        return HttpResponse("取得使用者資料失敗", status=400)
-    
-    userinfo = userinfo_response.json()
-    email = userinfo.get("email")
-    name = userinfo.get("name")
-
-    if not email :
-        return HttpResponse("無法取得使用者Email", status=400)
-    
-    # 建立或取得使用者
-    user, created = User.objects.get_or_create(
-
-        username =email,
-        defaults={
-            "email":email,
-            "first_name": name or ""
-        }
-
-    )
-    if created:
-        
-        user.set_unusable_password()
-        user.save()
-
-        if hasattr(user, "profile"):
-            
-            user.profile.is_google_user = True
-            user.profile.save()
-
-    login(request,user)
-
+    login(request, user)
     return redirect("dashboard")
+
+# def google_callback(request):
+
+#     #google回傳code 交換 token 取得使用者資料
+#     code = request.GET.get("code")
+
+#     if not code :
+
+#         return HttpResponse("未收到code , 登入失敗", status=400)
+    
+#     # 取得 access_token
+#     token_url = "https://oauth2.googleapis.com/token"
+#     data = {
+#         "code": code,
+#         "client_id": settings.GOOGLE_CLIENT_ID,
+#         "client_secret": settings.GOOGLE_CLIENT_SECRET,
+#         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+#         "grant_type": "authorization_code",
+#     }
+#     token_response = requests.post(token_url, data=data)
+
+#     if token_response.status_code != 200:
+#         return HttpResponse(f"Token 回傳錯誤: {token_response.text}", status = 400)
+
+#     token_json = token_response.json()
+#     access_token = token_json.get("access_token")
+#     if not access_token:
+#         return HttpResponse("無法取得 access_token" , status=400)
+    
+#     # 取得使用者資料
+#     userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
+#     headers = {"Authorization":f"Bearer {access_token}"}
+#     userinfo_response = requests.get(userinfo_url,headers=headers)
+
+#     if userinfo_response.status_code != 200:
+#         return HttpResponse("取得使用者資料失敗", status=400)
+    
+#     userinfo = userinfo_response.json()
+#     email = userinfo.get("email")
+#     name = userinfo.get("name")
+
+#     if not email :
+#         return HttpResponse("無法取得使用者Email", status=400)
+    
+#     # 建立或取得使用者
+#     user, created = User.objects.get_or_create(
+
+#         username =email,
+#         defaults={"email":email,"first_name": name or ""}
+
+#     )
+#     if created:
+        
+#         user.set_unusable_password()
+#         user.save()
+
+#         if hasattr(user, "profile"):
+            
+#             user.profile.is_google_user = True
+#             user.profile.save()
+
+#     login(request,user)
+
+#     return redirect("dashboard")
 
 
 
@@ -216,18 +243,15 @@ def dashboard(request):
 @login_required
 def profile_management(request):
 
-    # Updating our user's email and profiles
+    # Updating our user's profiles
     user = request.user
     profile = get_object_or_404(Profile ,user=user)
 
     try:
         shipping = ShippingAddress.objects.get(user=user)
-
     except ShippingAddress.DoesNotExist:
-
         shipping = None
 
-        
     context = {
         'user':user,
         'profile':profile,
@@ -240,13 +264,12 @@ def profile_management(request):
 @login_required
 def profile_update(request):
 
-    # Updating our user's email and profiles
+    # Updating our user's profiles
     user = request.user
     profile = get_object_or_404(Profile ,user=user)
 
-
     if request.method == 'POST':
-
+        # Form(data, instance=obj)  Update 模式
         user_form = UpdateForm(request.POST, instance=request.user)
         profile_form= ProfileUpdateForm(request.POST, request.FILES, instance=profile)
 
@@ -256,7 +279,6 @@ def profile_update(request):
             profile_form.save()
 
             messages.success(request, ' Account updated ')
-
             return redirect ('profile-management')
         
         else:
@@ -274,6 +296,7 @@ def profile_update(request):
     }
 
     return render(request, 'account/profile-update.html', context)
+
 
 @login_required
 def delete_account(request):
@@ -296,7 +319,6 @@ def delete_account(request):
     return render(request,'account/delete-account.html')
 
 
-    
 # Shipping view
 @login_required
 def manage_shipping(request):

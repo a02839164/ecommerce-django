@@ -25,20 +25,43 @@ def send_account_activation_email(sender, instance, created, **kwargs):
 
 
 #變更密碼通知信
+# 1. 在儲存前偵測變更
 @receiver(pre_save, sender=User)
-def detect_password_change(sender, instance, **kwargs):
-
+def track_password_change(sender, instance, **kwargs):
     if not instance.pk:
-        return  # 新建 User 不算修改密碼
-
-    try:
-        old_user = User.objects.get(pk=instance.pk)
-    except User.DoesNotExist:
         return
 
-    # 密碼有被修改
-    if old_user.password != instance.password:
+    # 檢查「新密碼」是否為不可用密碼 (Google 用戶通常會設為 !)
+    # 如果新密碼本身就是不可用的，這絕對不是使用者「變更」密碼，不應發信
+    if not instance.has_usable_password():
+        return
+
+    try:
+        old_user = User.objects.only('password').get(pk=instance.pk)
+        
+        # 只有當「舊密碼」也是可用的，且兩者不同，才標記變更
+        if old_user.has_usable_password() and old_user.password != instance.password:
+            instance._password_changed = True
+    except User.DoesNotExist:
+        pass
+
+# 2. 在儲存後執行發信
+@receiver(post_save, sender=User)
+def send_password_change_notification(sender, instance, created, **kwargs):
+    # 建立帳號時絕對不寄
+    if created:
+        return
+    
+    # 雙重保險：如果是 Google 用戶則跳過
+    if hasattr(instance, "profile") and instance.profile.is_google_user:
+        return
+
+    # 只有被標記為變更過的才發信
+    if getattr(instance, "_password_changed", False):
         send_password_changed_email(instance)
+        
+        # 發信後立刻清理標記
+        delattr(instance, "_password_changed")
 
 
 

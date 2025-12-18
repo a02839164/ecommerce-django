@@ -2,7 +2,6 @@
 from payment.models import Order, OrderItem
 from paypal.services import PaypalService
 from inventory.services import InventoryService
-from core.utils.rate_limit import CheckoutRateLimiter
 from shipping.services import create_shipment, buy_shipping_label
 from shipping.fake_webhook import simulate_fake_webhook
 from decimal import Decimal
