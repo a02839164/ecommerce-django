@@ -67,16 +67,17 @@ class ProfileUpdateForm(forms.ModelForm):
     def clean_photo(self):
 
         photo = self.cleaned_data.get('photo')
-        if photo and photo.size > 2 * 1024 * 1024:               # 限制大小
+        if not photo:
+            return photo
+
+        if photo.size > 2 * 1024 * 1024:               # 限制大小
              raise ValidationError("圖片大小不能超過 2MB。")
-        
-        allowed_types = ["image/jpeg", "image/png"]              # 限制圖片格式
-        if photo.content_type not in allowed_types:
-            raise ValidationError("只允許上傳 JPG 或 PNG 圖片。")
         
         try:
             img = Image.open(photo)                              # 驗證圖片內容
             img.verify()
+            if img.width * img.height > 10_000_000:
+                raise ValidationError("圖片解析度過大")
         except Exception:
             raise ValidationError("圖片檔案格式不正確或已損壞。")
 
