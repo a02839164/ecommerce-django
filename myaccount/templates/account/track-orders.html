@@ -28,20 +28,20 @@
   <div class="container bg-white shadow-md p-5 form-layout">
 
     {% if page_obj %}
-      {% for entry in page_obj %}
+      {% for order in page_obj %}
         <hr>
-        <h5><i class="fa fa-bookmark" aria-hidden="true"></i>&nbsp;Order #{{ entry.order.id }}</h5>
-        <strong>&nbsp;Date: {{ entry.order.date_ordered }}</strong>
+        <h5><i class="fa fa-bookmark" aria-hidden="true"></i>&nbsp;Order #{{ order.id }}</h5>
+        <strong>&nbsp;Date: {{ order.date_ordered }}</strong>
         <span style="margin-left: 20px;">
-          {% if entry.order.payment_status == "COMPLETED" %}
+          {% if order.payment_status == "COMPLETED" %}
             <span class="badge bg-success">已付款</span>
-          {% elif entry.order.payment_status == "PENDING" %}
+          {% elif order.payment_status == "PENDING" %}
             <span class="badge bg-warning text-dark">待確認</span>
-          {% elif entry.order.payment_status == "REFUNDING" %}
+          {% elif order.payment_status == "REFUNDING" %}
             <span class="badge bg-danger">退款處理中</span>
-          {% elif entry.order.payment_status == "REFUNDED" %}
+          {% elif order.payment_status == "REFUNDED" %}
             <span class="badge bg-danger">已退款</span>
-          {% elif entry.order.payment_status == "CANCELLED" %}
+          {% elif order.payment_status == "CANCELLED" %}
             <span class="badge bg-danger">已取消</span>
           {% else %}
             <span class="badge bg-danger">未付款</span>
@@ -51,17 +51,17 @@
 
         <!-- 收件資訊 -->
         <strong>&nbsp;Shipping Address:
-          {{ entry.order.shipping_address }}
+          {{ order.shipping_address }}
         </strong>
           <!-- 🚚 新增物流資訊 -->
         <div style="margin-top: 10px; margin-left: 25px;">
           <p class="mb-1"><strong>物流公司：</strong>
-            {{ entry.order.shipping_carrier }}
+            {{ order.shipping_carrier }}
           </p>
 
           <p class="mb-1"><strong>追蹤編號：</strong>
-            {% if entry.order.tracking_number %}
-              {{ entry.order.tracking_number }}
+            {% if order.tracking_number %}
+              {{ order.tracking_number }}
             {% else %}
               —
             {% endif %}
@@ -69,8 +69,8 @@
 
           <p class="mb-1">
             <strong>物流狀態：</strong>
-            {% if entry.order.shipping_status %}
-              {{ entry.order.shipping_status }}
+            {% if order.shipping_status %}
+              {{ order.shipping_status }}
             {% else %}
               —
             {% endif %}
@@ -78,8 +78,8 @@
 
           <p class="mb-1">
             <strong>最後更新：</strong>
-            {% if entry.order.tracking_updated_at %}
-              {{ entry.order.tracking_updated_at|date:"Y-m-d H:i" }}
+            {% if order.tracking_updated_at %}
+              {{ order.tracking_updated_at|date:"Y-m-d H:i" }}
             {% else %}
               —
             {% endif %}
@@ -89,7 +89,7 @@
         <hr>
 
         <!-- 商品項目 -->
-        {% for item in entry.items %}
+        {% for item in order.orderitem_set.all %}
           <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <!-- 商品圖片 -->
             {% if item.product.thumbnail %}
@@ -110,9 +110,9 @@
 
         <!-- 小計、運費、總額 -->
         <div style="text-align: right; margin-top: 10px;">
-          <p class="mb-1"><strong>Subtotal:</strong> ${{ entry.order.subtotal }}</p>
-          <p class="mb-1"><strong>Shipping:</strong> ${{ entry.order.shipping_fee }}</p>
-          <p class="h5 fw-bold text-danger">Total: ${{ entry.order.amount_paid }}</p>
+          <p class="mb-1"><strong>Subtotal:</strong> ${{ order.subtotal }}</p>
+          <p class="mb-1"><strong>Shipping:</strong> ${{ order.shipping_fee }}</p>
+          <p class="h5 fw-bold text-danger">Total: ${{ order.amount_paid }}</p>
         </div>
 
         <br>

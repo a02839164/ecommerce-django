@@ -1,7 +1,7 @@
 import requests
 from django.shortcuts import redirect, render, get_object_or_404
 from django.core.paginator import Paginator
-from .forms import CreateUserForm, LoginForm , UpdateForm, ProfileUpdateForm, ResendVerificationEmailForm 
+from .forms import CreateUserForm, LoginForm , ProfileUpdateForm, ResendVerificationEmailForm 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from .models import Profile
@@ -79,7 +79,7 @@ def email_verification_failed(request):
 @require_http_methods(["GET", "POST"])
 def resend_verification_by_email(request):
 
-    form = ResendVerificationEmailForm(request.POST or None)
+    form = ResendVerificationEmailForm(request.POST or None, request=request)
     if request.method == "POST" and form.is_valid():
 
         email = form.cleaned_data["email"]
@@ -136,7 +136,6 @@ def user_logout(request):
 
 def google_login(request):
 
-
     google_auth_url = 'https://accounts.google.com/o/oauth2/v2/auth'   # 授權端點
 
     params = {                                          #請求參數
@@ -151,10 +150,8 @@ def google_login(request):
     auth_url = f"{google_auth_url}?{urlencode(params)}" # urlencode把 dict轉成URL可使用的字串
 
     return redirect(auth_url)
-
-#google_login負責產生授權網址並 redirect，真正的登入與帳號處理在 callback 裡完成。」
-#登入成功後 依照Google OAuth 建立 OAuth 憑證時設定的Authorized redirect URIs 導回
-
+#google_login負責產生+導向授權網址，登入、帳號處理在 callback 完成
+#登入成功後 依照建立OAuth憑證設定的Authorized redirect URIs 導回
 def google_callback(request):
     code = request.GET.get("code")
     if not code:
@@ -232,9 +229,6 @@ def google_callback(request):
 
 #     return redirect("dashboard")
 
-
-
-
 @login_required
 def dashboard(request):
     return render(request,'account/dashboard.html')
@@ -267,15 +261,14 @@ def profile_update(request):
     # Updating our user's profiles
     user = request.user
     profile = get_object_or_404(Profile ,user=user)
+    profile_form = ProfileUpdateForm(instance=profile)
 
     if request.method == 'POST':
         # Form(data, instance=obj)  Update 模式
-        user_form = UpdateForm(request.POST, instance=request.user)
         profile_form= ProfileUpdateForm(request.POST, request.FILES, instance=profile)
 
-        if user_form.is_valid() and profile_form.is_valid():
+        if profile_form.is_valid():
 
-            user_form.save()
             profile_form.save()
 
             messages.success(request, ' Account updated ')
@@ -284,14 +277,8 @@ def profile_update(request):
         else:
 
             messages.error(request, '更新失敗，請檢查欄位內容。')
-            
-    else:
-
-        user_form = UpdateForm(instance=user)
-        profile_form = ProfileUpdateForm(instance=profile)
         
     context = {
-        'user_form':user_form,
         'profile_form':profile_form,    
     }
 
@@ -324,15 +311,14 @@ def delete_account(request):
 def manage_shipping(request):
 
     try:                                                                  
-
         #Account user with shipment information
-        shipping = ShippingAddress.objects.get(user=request.user.id)       # 嘗試去資料庫找 目前登入的使用者 的收件地址
+        shipping = ShippingAddress.objects.get(user=request.user.id)       # 先去資料庫找 目前登入的使用者 的收件地址
 
     except ShippingAddress.DoesNotExist:
 
-        shipping = None                                                    # 如果這個使用者還沒有收件地址，就設為 None
+        shipping = None                                                    # 如果使用者還沒有收件地址，設為 None
 
-    form = ShippingForm(instance=shipping)                                 # 建立一個表單，並把 shipping 資料塞進去。
+    form = ShippingForm(instance=shipping)                                 # Form(data, instance=obj)  Update 模式
 
     if request.method == 'POST':
 
@@ -341,13 +327,10 @@ def manage_shipping(request):
         if form.is_valid():
         
             # Assign the user FK on the object
-            shipping_user = form.save(commit=False)                        # form.save(commit=False) → 建立物件，但暫時不要存到資料庫，因為我們還要加上 user。
-
+            shipping_user = form.save(commit=False)                        # (commit=False)暫時不要存到資料庫
             # Adding the FK itself
-            shipping_user.user = request.user                              # 手動把 user 欄位綁定到目前登入的使用者。
-
+            shipping_user.user = request.user                              # 加上 user 欄位
             shipping_user.save()
-
             return redirect ('profile-management')
     
     context = {'form':form}
@@ -359,25 +342,15 @@ def manage_shipping(request):
 @login_required
 def track_orders(request):
 
-    try:
-        orders = Order.objects.filter(user=request.user).order_by('-date_ordered')  # 撈出使用者的所有訂單（照日期排序）
-        order_list = []
+        orders = (
+            Order.objects
+            .filter(user=request.user)           # 篩選使用者的所有訂單
+            .order_by('-date_ordered')           # 排序
+            .prefetch_related('orderitem_set'))  # 先把下一層的明細一次抓回來 prefetch_related 適用一對多
 
-        for order in orders:
-            items = OrderItem.objects.filter(order=order)
-            order_list.append({
-                'order': order,
-                'items': items,
-            })
-        
-        paginator = Paginator(order_list, 5)
-        page_number = request.GET.get('page')
-        page_obj = paginator.get_page(page_number)
+        paginator = Paginator(orders, 5)
+        page_obj = paginator.get_page(request.GET.get('page'))
 
         context = {'page_obj': page_obj}
 
         return render(request, 'account/track-orders.html', context )
-    
-    except:
-
-        return render(request, 'account/track-orders.html' )

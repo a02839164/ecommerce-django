@@ -18,6 +18,9 @@
             <form method="post">
             {% csrf_token %}
                 {{ form.email|as_crispy_field }}
+                <br>
+                <br>
+                {% include "turnstile/field.html" %}
             <button type="submit" class="btn btn-outline-primary w-100 p-2">Resend</button>
             </form>
 

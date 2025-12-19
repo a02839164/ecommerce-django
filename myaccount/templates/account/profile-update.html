@@ -33,7 +33,10 @@
                 {% csrf_token %}
                 {{profile_form.photo| as_crispy_field}}
                 <br>
-                {{user_form.email| as_crispy_field}}
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email"class="form-control"value="{{ request.user.email }}"disabled>
+                </div>
                 {{profile_form.phone| as_crispy_field}}
                 {{profile_form.name| as_crispy_field}}
                 <br>

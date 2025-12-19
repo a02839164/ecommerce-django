@@ -11,6 +11,7 @@ from .models import Profile
 from django.core.exceptions import ValidationError
 from core.security.turnstile.forms import TurnstileFormMixin
 from core.security.email_verification.cooldown import can_send, mark_sent
+from PIL import Image
 
 # Registration form
 class CreateUserForm(TurnstileFormMixin ,UserCreationForm):
@@ -26,14 +27,14 @@ class CreateUserForm(TurnstileFormMixin ,UserCreationForm):
         # Mark email field as required
         self.fields['email'].required = True
 
-    #Email valdation
-    def clean_email(self):
 
-        email = self.cleaned_data.get('email')
+    def clean_email(self):                                            #  clean_<fieldname>() ； 回傳值寫回 cleaned_data[fieldname]
+
+        email = self.cleaned_data.get('email').lower()
 
         if User.objects.filter(email=email).exists():
 
-            raise forms.ValidationError('This email is invalid')
+            raise forms.ValidationError('This email is already registered')
         
         if len(email) >= 350:
 
@@ -43,7 +44,6 @@ class CreateUserForm(TurnstileFormMixin ,UserCreationForm):
     
 
 # Login form
-
 class LoginForm(TurnstileFormMixin, AuthenticationForm):
 
     username = forms.CharField(widget=TextInput())
@@ -53,39 +53,6 @@ class LoginForm(TurnstileFormMixin, AuthenticationForm):
         # 注意：AuthenticationForm 期望的是 request=...、data=...
         super().__init__(request=request, *args, **kwargs)
 
-
-
-# Update form
-class UpdateForm(forms.ModelForm):
-    
-    password = None
-
-    class Meta:
-
-        model = User
-
-        fields = ['email']
-
-    def __init__(self, *args, **kwargs):
-        super(UpdateForm, self).__init__(*args, **kwargs)
-
-        # Mark email field as required
-        self.fields['email'].disabled = True
-
-    #Email valdation
-    def clean_email(self):
-
-        email = self.cleaned_data.get('email')
-
-        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-
-            raise forms.ValidationError('This email is invalid')
-        
-        if len(email) >= 350:
-
-            raise forms.ValidationError('Your email is too long')
-        
-        return email
     
 class ProfileUpdateForm(forms.ModelForm):
 
@@ -94,16 +61,26 @@ class ProfileUpdateForm(forms.ModelForm):
         model = Profile
         fields = ['photo', 'name', 'phone']
         widgets = {
-            'photo': forms.FileInput(attrs={'class': 'form-control'}),
+            'photo': forms.FileInput(attrs={'class': 'form-control'}),   # 前端顯示元素
         }
 
     def clean_photo(self):
 
         photo = self.cleaned_data.get('photo')
-        if photo and photo.size > 2 * 1024 * 1024:  # 2MB 限制
-            
-            raise ValidationError("圖片大小不能超過 2MB。")
+        if photo and photo.size > 2 * 1024 * 1024:               # 限制大小
+             raise ValidationError("圖片大小不能超過 2MB。")
         
+        allowed_types = ["image/jpeg", "image/png"]              # 限制圖片格式
+        if photo.content_type not in allowed_types:
+            raise ValidationError("只允許上傳 JPG 或 PNG 圖片。")
+        
+        try:
+            img = Image.open(photo)                              # 驗證圖片內容
+            img.verify()
+        except Exception:
+            raise ValidationError("圖片檔案格式不正確或已損壞。")
+
+
         return photo
     
 
@@ -112,30 +89,25 @@ class TurnstilePasswordResetForm(TurnstileFormMixin, PasswordResetForm):
     def __init__(self, *args, request=None, **kwargs):
         super().__init__(*args, request=request, **kwargs)
 
-    def save(self, **kwargs):
-        """
-        重寫 save，加入冷卻時間限制
-        """
-        # 取得表單中的 email
+    def save(self, **kwargs):    #重寫 save  加入冷卻時間限制
+
         email = self.cleaned_data.get("email")
         
         # 1. 檢查冷卻 (使用 'password_reset' 作為 prefix，區隔驗證信)
-        # 這裡建議設定短一點，例如 1-5 分鐘，防止惡意刷信即可
-        if can_send(email, action="password_reset"):
+        if can_send(email, action="password_reset"):                   # 1-1. can_send去 cache 查 key ； 回傳 True = 可以寄
             # 2. 呼叫父類別真正發信
             super().save(**kwargs)
             
-            # 3. 標記已發送，設定 60 秒或更久
+            # 3. 標記已發送
             mark_sent(email, action="password_reset")
         else:
-            # 靜默失敗：不發信，也不報錯
-            # 這樣攻擊者不知道該 Email 是否存在，也不知道我們有沒有攔截
+
             import logging
             logger = logging.getLogger(__name__)
             logger.warning(f"Password reset rate limited for: {email}")
 
-
-class ResendVerificationEmailForm(forms.Form):
+# Action Form
+class ResendVerificationEmailForm(TurnstileFormMixin, forms.Form):
     
     email = forms.EmailField(
         label="Email",
@@ -144,3 +116,7 @@ class ResendVerificationEmailForm(forms.Form):
             "autocomplete": "email",
         })
     )
+
+    def clean_email(self):
+        
+        return self.cleaned_data["email"].strip().lower()
