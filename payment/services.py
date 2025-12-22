@@ -16,16 +16,9 @@ class CheckoutService:
         return all(v is not None and str(v).strip() != "" for v in values)   #如果有任何一個值是 None 或 ""，回傳整個 all() 變成 False
 
 
+    #建立 PayPal 訂單（尚未扣款）
     @staticmethod
     def create_paypal_order(*, cart):
-        """
-        ✅ 建立 PayPal 訂單（尚未扣款）
-        原本 view 內：
-        - 檢查購物車是否為空
-        - 檢查每個商品的 available_stock
-        - 計算總金額
-        - 呼叫 PayPal create_order
-        """
 
         if len(cart) == 0:
             raise ValueError("Cart is empty")
@@ -43,31 +36,22 @@ class CheckoutService:
         total_amount = cart.get_total() + cart.get_shipping_fee()
 
         svc = PaypalService()
-        order = svc.create_order(
+        paypal_order = svc.create_order(
             total_value=str(total_amount),
             currency="USD"
         )
 
-        # ✅ 回傳 PayPal 原始 order（裡面有 id 給前端用）
-        return order
+        # 回傳 PayPal 原始 order（裡面有 id 給前端用）
+        return paypal_order
 
 
     @staticmethod
     @transaction.atomic
     def capture_paypal_order(*,user,cart,order_id,name,email,address1,address2,city,state,zipcode,):
-        """
-    ✅ 交易總指揮：
-    - 驗證 PayPal 付款結果
-    - 驗證金額與幣別
-    - 建立訂單
-    - 預扣庫存
-    - 建立物流
-        """
-    
-        # -------------------------------------------------
-        # 0️⃣ 基本防呆
-        # -------------------------------------------------
 
+    # 驗證 PayPal 付款結果 > 驗證金額與幣別 > 建立訂單 > 預扣庫存 > 建立物流
+
+        # 基本防呆
         if not user or not user.is_authenticated:
             raise ValueError("Login required")
         
@@ -90,15 +74,13 @@ class CheckoutService:
             zipcode or "",
         ])
 
-        # -------------------------------------------------
-        # 1️⃣ 呼叫 PayPal Capture
-        # -------------------------------------------------
+
+        # 1️.呼叫 PayPal Capture
         svc = PaypalService()
         result = svc.capture_order(order_id)
 
-        # -------------------------------------------------
-        # 2️⃣ 交易驗證（✅ 正確歸位在 payment）
-        # -------------------------------------------------
+
+        # 2️.交易驗證
         status = getattr(result, "status", None)
         if status != "COMPLETED":
             raise ValueError("Payment not completed")
@@ -112,7 +94,7 @@ class CheckoutService:
             raise ValueError("Currency mismatch")
 
         if paypal_total != total_cost:
-            # ✅ 金額不符 → 強制退款
+            # 金額不符 → 強制退款
             svc.refund_capture(
                 paypal_capture_id,
                 amount=str(paypal_total),
@@ -120,9 +102,7 @@ class CheckoutService:
             )
             raise ValueError("Amount mismatch")
 
-        # -------------------------------------------------
-        # 3️⃣ 建立訂單與 OrderItem
-        # -------------------------------------------------
+        # 3️.建立訂單與 OrderItem
         order = Order.objects.create(
             full_name=name,
             email=email,
@@ -149,13 +129,11 @@ class CheckoutService:
                 user=user,
             )
 
-        # -------------------------------------------------
-        # 4️⃣ 預扣庫存（✅ 唯一合法入口）
-        # -------------------------------------------------
+        # 4️.預扣庫存
         try:
             InventoryService.reserve_stock(order)
         except Exception as e:
-            # ✅ 預扣失敗 → 自動退款
+            # 預扣失敗 → 自動退款
             svc.refund_capture(
                 paypal_capture_id,
                 amount=str(paypal_total),
@@ -167,9 +145,7 @@ class CheckoutService:
 
             raise ValueError(f"Stock error: {str(e)}")
 
-        # -------------------------------------------------
-        # 5️⃣ 建立物流（Shippo）
-        # -------------------------------------------------
+        # 5️. 建立物流（Shippo）
         try:
             shipment_res = create_shipment(
                 order,
@@ -181,7 +157,7 @@ class CheckoutService:
             )
 
             if shipment_res.get("rates"):
-                # ✅ 你原本是找 USPS
+                # 你原本是找 USPS
                 rate = next(
                     (r for r in shipment_res["rates"] if r["provider"] == "USPS"),
                     None
@@ -205,10 +181,8 @@ class CheckoutService:
                     simulate_fake_webhook(order.tracking_number)
 
         except Exception as e:
-            # ⚠️ 物流錯誤不回滾付款（避免實務災難）
+            # 物流錯誤不回滾付款（避免實務災難）
             print("Shippo API error:", e)
 
-        # -------------------------------------------------
-        # ✅ 交易完成
-        # -------------------------------------------------
+        # 交易完成
         return order

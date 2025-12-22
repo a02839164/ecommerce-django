@@ -1,5 +1,3 @@
-# 呼叫 PayPal API（建立訂單、付款、退款）
-
 from django.conf import settings
 import json
 from paypalcheckoutsdk.core import SandboxEnvironment, PayPalHttpClient 
@@ -8,7 +6,7 @@ from paypalcheckoutsdk.payments import CapturesRefundRequest
 
 
 
-#建立API連線客戶端
+# 建立API連線客戶端
 class PaypalClient:
 
     def __init__(self):
@@ -22,10 +20,10 @@ class PaypalClient:
         self.client = PayPalHttpClient(environment)
 
 
-    def handle_response(self, response):
+    # def handle_response(self, response):
 
-        #將 PayPal 回傳結果轉成 dict
-        return json.loads(response.result.__repr__())
+    #     #將 PayPal 回傳結果轉成 dict
+    #     return json.loads(response.result.__repr__())
 
 
 # PayPal 退款與查詢功能
@@ -64,5 +62,5 @@ class PaypalService(PaypalClient):
         request.request_body({
             "amount": {"value": amount, "currency_code": currency}
         })
-        response = self.client.execute(request)     #把退款請求 (request) 交給 PayPal伺服器執行退款/更新資料庫 回傳退款結果存進response
+        response = self.client.execute(request)     #連線執行退款請求，交給 PayPal伺服器執行退款+更新內部交易狀態 回傳response
         return response.result

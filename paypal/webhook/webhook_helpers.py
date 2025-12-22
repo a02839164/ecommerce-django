@@ -1,5 +1,3 @@
-# 共用工具（驗證簽章、解析資料）
-
 import json
 import requests
 import logging
@@ -8,11 +6,9 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+
+# 驗證 PayPal Webhook 簽章，回傳 True / False
 def verify_paypal_signature(request):
-    """
-    驗證 PayPal Webhook 簽章
-    回傳 True / False
-    """
 
     raw_body = request.body.decode('utf-8')
     data = json.loads(raw_body)

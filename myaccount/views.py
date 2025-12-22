@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from payment.forms import ShippingForm
-from payment.models import ShippingAddress, Order, OrderItem
+from payment.models import ShippingAddress, Order
 from core.security.email_verification.service import EmailVerificationService
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
@@ -165,69 +165,6 @@ def google_callback(request):
     login(request, user)
     return redirect("dashboard")
 
-# def google_callback(request):
-
-#     #google回傳code 交換 token 取得使用者資料
-#     code = request.GET.get("code")
-
-#     if not code :
-
-#         return HttpResponse("未收到code , 登入失敗", status=400)
-    
-#     # 取得 access_token
-#     token_url = "https://oauth2.googleapis.com/token"
-#     data = {
-#         "code": code,
-#         "client_id": settings.GOOGLE_CLIENT_ID,
-#         "client_secret": settings.GOOGLE_CLIENT_SECRET,
-#         "redirect_uri": settings.GOOGLE_REDIRECT_URI,
-#         "grant_type": "authorization_code",
-#     }
-#     token_response = requests.post(token_url, data=data)
-
-#     if token_response.status_code != 200:
-#         return HttpResponse(f"Token 回傳錯誤: {token_response.text}", status = 400)
-
-#     token_json = token_response.json()
-#     access_token = token_json.get("access_token")
-#     if not access_token:
-#         return HttpResponse("無法取得 access_token" , status=400)
-    
-#     # 取得使用者資料
-#     userinfo_url = "https://www.googleapis.com/oauth2/v2/userinfo"
-#     headers = {"Authorization":f"Bearer {access_token}"}
-#     userinfo_response = requests.get(userinfo_url,headers=headers)
-
-#     if userinfo_response.status_code != 200:
-#         return HttpResponse("取得使用者資料失敗", status=400)
-    
-#     userinfo = userinfo_response.json()
-#     email = userinfo.get("email")
-#     name = userinfo.get("name")
-
-#     if not email :
-#         return HttpResponse("無法取得使用者Email", status=400)
-    
-#     # 建立或取得使用者
-#     user, created = User.objects.get_or_create(
-
-#         username =email,
-#         defaults={"email":email,"first_name": name or ""}
-
-#     )
-#     if created:
-        
-#         user.set_unusable_password()
-#         user.save()
-
-#         if hasattr(user, "profile"):
-            
-#             user.profile.is_google_user = True
-#             user.profile.save()
-
-#     login(request,user)
-
-#     return redirect("dashboard")
 
 @login_required
 def dashboard(request):

@@ -51,5 +51,3 @@ def process_single_order_refund(request, order_id):  # 不需要 @require_POST �
     except Exception as e:
         messages.error(request, f"Order {order_id} Refund failed: {e}")
         return False
-
-# ⚠️ 注意：原來的 admin_refund_order (帶有 @require_POST, redirect) 應該被刪除或重命名。

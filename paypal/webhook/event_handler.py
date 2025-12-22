@@ -15,14 +15,10 @@ class PaypalEventHandler:
 
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
 
-            if order.payment_status != "COMPLETED":  # 避免重複扣
+            if order.payment_status != "COMPLETED":                   # 冪等保護 / 避免重複扣
                 InventoryService.apply_inventory_sale(order)          # 正式扣庫存
         
-        elif event_type in [
-            "CHECKOUT.ORDER.CANCELLED",
-            "PAYMENT.CAPTURE.DENIED",
-            "PAYMENT.CAPTURE.EXPIRED",
-        ]:
+        elif event_type in ["CHECKOUT.ORDER.CANCELLED","PAYMENT.CAPTURE.DENIED","PAYMENT.CAPTURE.EXPIRED",]:
 
             if order.payment_status not in ["CANCELLED", "FAILED", "EXPIRED"]:
                 InventoryService.release_stock(order)                  # 釋放預扣

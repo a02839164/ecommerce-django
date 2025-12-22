@@ -10,21 +10,21 @@ from payment.models import Order
 logger = logging.getLogger(__name__) 
 
 @csrf_exempt
-def paypal_webhook(request):
+def paypal_webhook(request):                  # 統一使用 dict.get() + 預設值，避免因欄位缺失導致 crash
 
-    # Step 1：簽章驗證
+    # Step-1 簽章驗證
     is_valid, data = verify_paypal_signature(request)
 
     if not is_valid:
 
         return JsonResponse({"status": "invalid signature"}, status=400)
 
-    logger.info("✔ PayPal Webhook signature VERIFIED")
+    logger.info("PayPal Webhook signature VERIFIED")
 
     event_type = data.get("event_type")
     resource = data.get("resource", {}) or {}
 
-    # Step 2：抓 order_id / capture_id
+    # Step-2  抓 order_id / capture_id 
         # A. 付款 webhook：resource.id = capture_id
     capture_id_from_resource_id = resource.get("id")
 
@@ -45,24 +45,24 @@ def paypal_webhook(request):
     )
 
 
-    # Step 3：尋找訂單
+    # Step-3：尋找訂單
     order = None
 
         # 用 order_id 找
     if order_id:
         order = Order.objects.filter(paypal_order_id=order_id).first()
 
-        # 用 capture_id_from_resource_id 找（付款）
+        # 付款用 capture_id_from_resource_id 找
     if not order and capture_id_from_resource_id:
         order = Order.objects.filter(paypal_capture_id=capture_id_from_resource_id).first()
 
-        # 用 capture_id_from_links 找（退款）
+        # 退款用 capture_id_from_links 找
     if not order and capture_id_from_links:
         order = Order.objects.filter(paypal_capture_id=capture_id_from_links).first()
 
     if not order:
         logger.warning(
-            f"⚠ Webhook received but ORDER NOT FOUND → "
+            f"Webhook received but ORDER NOT FOUND → "
             f"order_id={order_id}, "
             f"resource_id={capture_id_from_resource_id}, "
             f"capture_from_links={capture_id_from_links}"
@@ -70,7 +70,7 @@ def paypal_webhook(request):
         return JsonResponse({"status": "order_not_found"}, status=200)
 
 
-    # Step 4：更新訂單狀態
+    # Step-4 更新訂單狀態
     PaypalEventHandler.handle(event_type, resource, order)
 
     return JsonResponse({"status": "ok"})
