@@ -45,7 +45,7 @@ def adjust_stock(request, product_id):
 
 
 
-# 下載全部商品庫存（✅ 含 reserved 與 available）
+# 下載全部商品庫存（ 含 reserved 與 available）
 @staff_member_required
 def download_all_stock_csv(request):
 
@@ -109,7 +109,7 @@ def bulk_update_stock(request):
                 product_id = row.get("id")
                 new_stock_raw = row.get("stock")
 
-                # 格式錯誤檢查
+                # 檢查格式
                 if not product_id or not new_stock_raw:
                     error_list.append(f"缺少資料：{row}")
                     continue
@@ -140,7 +140,7 @@ def bulk_update_stock(request):
                     "diff": diff,
                 })
 
-            # 保存 CSV 內容到 session，稍後用於「真正匯入」
+            # 暫存原始輸入 CSV 內容到 session，稍後用於「真正匯入」
             request.session["bulk_csv"] = decoded
 
             return render(request, "inventory/bulk_stock_preview.html", {
@@ -153,7 +153,7 @@ def bulk_update_stock(request):
             return redirect("inventory:bulk-stock")
 
 
-        # Step 2：使用者按「確認匯入」（✅ 一般調整模式，不清 reserved）
+        # Step 2：使用者按「確認匯入」（一般調整模式，不清 reserved）
     if request.method == "POST" and "confirm_import" in request.POST:
 
         if not request.user.is_superuser:
@@ -173,40 +173,33 @@ def bulk_update_stock(request):
         error_rows = []
         updated_count = 0
 
-        from django.db import transaction
-        from django.db.models import F
-
         try:
             with transaction.atomic():
 
                 for row in reader:
 
-                    # ✅ 跳過整列空白
+                    # 整列空白跳過
                     if not any(row.values()):
                         continue
 
                     product_id = (row.get("id") or "").strip()
                     new_stock_raw = (row.get("stock") or "").strip()
 
-                    # ✅ id 或 stock 空白 → 跳過並記錄錯誤
+                    # id 或 stock 空白 → 跳過並記錄錯誤
                     if not product_id or not new_stock_raw:
                         error_rows.append(f"缺少欄位（id 或 stock）：{row}")
                         continue
 
-                    # ✅ stock 必須是整數
+                    # stock 必須是整數 
                     try:
                         new_stock = int(new_stock_raw)
                     except ValueError:
                         error_rows.append(f"無效的庫存數值：{new_stock_raw}")
                         continue
 
-                    # ✅ 鎖商品，防止下單 / 後台同時改庫存
+                    # 鎖商品，防止下單 + 後台同時改庫存
                     try:
-                        product = (
-                            Product.objects
-                            .select_for_update()
-                            .get(id=product_id, is_fake=False)
-                        )
+                        product = (Product.objects.select_for_update().get(id=product_id, is_fake=False))
                     except Product.DoesNotExist:
                         error_rows.append(f"找不到商品 ID：{product_id}")
                         continue
@@ -215,11 +208,11 @@ def bulk_update_stock(request):
                     old_reserved = product.reserved_stock
                     diff = new_stock - old_stock
 
-                    # ✅ 若完全沒變化 → 跳過
+                    #  若完全沒變化 → 跳過
                     if diff == 0:
                         continue
 
-                    # ✅ ✅ ✅ 最關鍵安全防線（你要求的規則）
+                    #  最關鍵安全防線（新庫存要大於保留庫存）
                     if new_stock < old_reserved:
                         error_rows.append(
                             f"商品 {product.id} 匯入失敗："
@@ -227,11 +220,11 @@ def bulk_update_stock(request):
                         )
                         continue
 
-                    # ✅ 只調整 stock，不動 reserved_stock
+                    #  只調整 stock，不動 reserved_stock
                     product.stock = new_stock
                     product.save(update_fields=["stock"])
 
-                    # ✅ 寫入 Log
+                    #  寫入 Log
                     InventoryLog.objects.create(
                         product=product,
                         quantity=diff,
@@ -239,21 +232,21 @@ def bulk_update_stock(request):
                         note=f"BULK IMPORT (NORMAL): {old_stock} → {new_stock}",
                         performed_by=request.user,
                     )
-
+                    # 顯示成功匯入清單
                     success_rows.append({
                         "product": product,
                         "old": old_stock,
                         "new": new_stock,
                         "diff": diff,
                     })
-
+                    # 顯示成功匯入筆數
                     updated_count += 1
 
         except Exception as e:
             messages.error(request, f"批次匯入失敗，已回滾：{e}")
             return redirect("inventory:bulk-stock")
 
-        # ✅ 清除 session
+        # 清除 session
         request.session.pop("bulk_csv", None)
 
         return render(request, "inventory/bulk_stock_result.html", {

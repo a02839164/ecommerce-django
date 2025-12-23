@@ -19,7 +19,7 @@ class SupportTicket(models.Model):
         ("refund", "付款問題"), 
         ("product", "商品提問"),
         ("account", "帳號問題"),
-        ("other", "其他"),
+        ("OTHER", "其他"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)

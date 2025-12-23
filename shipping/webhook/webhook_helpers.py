@@ -5,15 +5,14 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+# 驗證 Shippo 傳來的 token 是否正確
 def validate_token(token: str) -> bool:
 
-    #驗證 Shippo 傳來的 token 是否正確
     return token and token == settings.SHIPPO_WEBHOOK_TOKEN
 
-
+# 解析 webhook decode 成 JSON
 def parse_webhook_json(request):
 
-    #解析 webhook JSON，失敗則回傳 None
     try:
         data = json.loads(request.body)
         logger.info(f"Full webhook data: {json.dumps(data, indent=2)}")
@@ -22,20 +21,18 @@ def parse_webhook_json(request):
         logger.error(f"JSON decode error: {e}")
         return None
 
-
+# 處理 Shippo 不同格式回傳的 tracking_number
 def extract_tracking_number(data):
 
-    #處理 Shippo 不同格式回傳的 tracking_number
     return (
         data.get("tracking_number")
         or data.get("data", {}).get("tracking_number")
         or None
     )
 
-
+# 處理 Shippo 不同格式回傳的 status
 def extract_status(data):
     
-    #處理 Shippo 不同格式回傳的 status
     return (
         data.get("tracking_status", {}).get("status")
         or data.get("data", {}).get("tracking_status", {}).get("status")

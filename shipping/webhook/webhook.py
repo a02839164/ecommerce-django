@@ -39,9 +39,9 @@ def shippo_webhook(request):
 
         # 4. 抽取資料
         tracking_number = extract_tracking_number(data)
-        status = extract_status(data)
+        new_status = extract_status(data)
 
-        logger.info(f"Extracted - Tracking: {tracking_number}, Status: {status}")
+        logger.info(f"Extracted - Tracking: {tracking_number}, Status: {new_status}")
 
         if not tracking_number:
             logger.error("Missing tracking_number in webhook data.")
@@ -60,7 +60,7 @@ def shippo_webhook(request):
             })
 
         # 6. 把事件交給 event handler
-        ShippoEventHandler.handle(order, status)
+        ShippoEventHandler.handle(order, new_status)
 
         return JsonResponse({"success": True})
 

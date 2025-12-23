@@ -11,13 +11,14 @@ class InventoryService:
     @transaction.atomic
     def reserve_stock(order):
 
-
+        # transaction.atomic + select_for_update
         for item in order.orderitem_set.all():
             product = Product.objects.select_for_update().get(pk=item.product_id)
 
             if item.quantity > product.available_stock:
                 raise ValueError(f"{product.title} 庫存不足（無法預扣）")
 
+            # update + F()原子更新剛剛鎖住的這一筆 product
             Product.objects.filter(pk=product.pk).update(
                 reserved_stock=F("reserved_stock") + item.quantity
             )
@@ -83,10 +84,10 @@ class InventoryService:
         if order.payment_status == "REFUNDED":
             return
 
-        for item in order.orderitem_set.select_related("product"):
-            product = Product.objects.select_for_update().get(id=item.product.id)
+        for item in order.orderitem_set.all():
+            product = Product.objects.select_for_update().get(pk=item.product_id)
 
-            Product.objects.filter(id=product.id).update(
+            Product.objects.filter(pk=product.pk).update(
                 stock=F("stock") + item.quantity
             )
 
@@ -105,11 +106,9 @@ class InventoryService:
     @transaction.atomic
     def increase_stock(product_id, qty, action="MANUAL_ADD", note="", user=None):
         
-        product = (Product.objects.select_for_update().get(id=product_id)
-        )
+        product = Product.objects.select_for_update().get(id=product_id)
 
-        Product.objects.filter(pk=product.pk).update(stock=F("stock") + qty
-        )
+        Product.objects.filter(pk=product.pk).update(stock=F("stock") + qty )
 
         InventoryLog.objects.create(
             product=product,
@@ -125,7 +124,9 @@ class InventoryService:
 
 
         product = Product.objects.select_for_update().get(id=product_id)
-        updated = Product.objects.filter(id=product_id,stock__gte=F("reserved_stock") + qty   # stock 必須 ≥ reserved_stock + 這次要扣的 qty
+
+        # 篩選出  id + stock 必須大於 (reserved_stock + 這次要扣的 qty) 再去做更新
+        updated = Product.objects.filter(id=product_id,stock__gte=F("reserved_stock") + qty   
         ).update(stock=F("stock") - qty)
 
         if updated == 0:

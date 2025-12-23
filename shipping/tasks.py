@@ -6,7 +6,6 @@ from django.conf import settings
 def send_fake_webhook_task(tracking_number, status):
 
 
-
     #Celery 模擬 Shippo webhook，依照 status 更新訂單物流狀態。
     url = f"http://127.0.0.1:8000/webhooks/shippo/?token={settings.SHIPPO_WEBHOOK_TOKEN}"
 

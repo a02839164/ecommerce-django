@@ -12,9 +12,6 @@ def simulate_fake_webhook(tracking_number):
     ]
 
     for status, delay in STAGES:
-        send_fake_webhook_task.apply_async(
-            args=[tracking_number, status],
-            countdown=delay
-        )
+        send_fake_webhook_task.apply_async(args=[tracking_number, status],countdown=delay)
 
     return True

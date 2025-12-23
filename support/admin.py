@@ -4,20 +4,20 @@ from .models import SupportTicket, SupportMessage
 from django.utils.safestring import mark_safe
 
 
-#表單：客服回覆的欄位
+# 建立一個後台表單，增加客服回覆的欄位
 class SupportTicketAdminForm(forms.ModelForm):
     reply_message = forms.CharField(
         label="Reply",
         required=False,
         widget=forms.Textarea(attrs={"rows": 6})
     )
-
+    # 使用 fields="all" 完整保留預設 ModelForm 對 SupportTicket 欄位的處理能力
     class Meta:
         model = SupportTicket
         fields = "__all__"
 
 
-#對話紀錄
+# 對話紀錄
 class SupportMessageInline(admin.TabularInline):
     model = SupportMessage
     extra = 0
@@ -49,7 +49,6 @@ class SupportMessageInline(admin.TabularInline):
 
 @admin.register(SupportTicket)
 class SupportTicketAdmin(admin.ModelAdmin):
-    form = SupportTicketAdminForm
 
     list_display = ("id", "subject", "category", "user", "email","status", "priority", "created_at")
     list_filter = ("status", "priority", "category", "created_at")
@@ -59,13 +58,16 @@ class SupportTicketAdmin(admin.ModelAdmin):
 
     inlines = [SupportMessageInline]
 
+    # 禁止新增
     def has_add_permission(self, request):
-        return False  # 禁止新增
-
-    def has_delete_permission(self, request, obj=None):
-        return False  # 禁止刪除
+        return False 
     
-    # ★ 寫入 SupportMessage 的邏輯
+    # 禁止刪除
+    def has_delete_permission(self, request, obj=None):
+        return False  
+    
+    form = SupportTicketAdminForm
+    # 在 Admin 儲存流程使用save_model 非save  ；插入自訂業務邏輯
     def save_model(self, request, obj, form, change):
         reply = form.cleaned_data.get("reply_message")
 

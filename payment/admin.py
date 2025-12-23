@@ -9,7 +9,7 @@ class OrderItemInline(admin.TabularInline):
 
     # 只讀欄位（避免破壞訂單紀錄）
     readonly_fields = ('product', 'quantity', 'price', 'user')
-    # 避免超大下拉選單卡死
+    # ID 輸入框 取代下拉選單
     raw_id_fields = ('product', 'user')
     # 避免 N+1 加速列表
     list_select_related = ('product', 'user')

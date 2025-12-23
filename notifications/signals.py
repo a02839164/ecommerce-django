@@ -9,7 +9,7 @@ from notifications.handlers.account import send_verification_email, send_passwor
 from notifications.handlers.order import send_order_confirm_email, send_shipping_update_email, send_refund_success_email
 from notifications.handlers.support import send_support_reply_email
 
-
+# 監聽存檔後 + 事件來源的 model
 @receiver(post_save, sender=User)
 def send_account_activation_email(sender, instance, created, **kwargs):
     """

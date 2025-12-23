@@ -147,14 +147,7 @@ class CheckoutService:
 
         # 5️. 建立物流（Shippo）
         try:
-            shipment_res = create_shipment(
-                order,
-                address1,
-                address2,
-                city,
-                state,
-                zipcode,
-            )
+            shipment_res = create_shipment(order,address1,address2,city,state,zipcode,)
 
             if shipment_res.get("rates"):
                 # 你原本是找 USPS
