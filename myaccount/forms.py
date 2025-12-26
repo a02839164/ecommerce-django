@@ -6,12 +6,15 @@ from django.contrib.auth.forms import AuthenticationForm     # User authenticati
 from django.forms.widgets import PasswordInput, TextInput    # User authentication - Login
 
 from django.contrib.auth.forms import PasswordResetForm
-
 from .models import Profile
 from django.core.exceptions import ValidationError
 from core.security.turnstile.forms import TurnstileFormMixin
 from core.security.email_verification.cooldown import is_cooldown, mark_sent
 from PIL import Image
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 # Registration form
 class CreateUserForm(TurnstileFormMixin ,UserCreationForm):
@@ -84,28 +87,27 @@ class ProfileUpdateForm(forms.ModelForm):
 
         return photo
     
-
+# 密碼忘記表單- 新增人機驗證、冷卻時間、擋google用戶
 class TurnstilePasswordResetForm(TurnstileFormMixin, PasswordResetForm):
 
     def __init__(self, *args, request=None, **kwargs):
         super().__init__(*args, request=request, **kwargs)
+
 
     def save(self, **kwargs):    #重寫 save  加入冷卻時間限制
 
         email = self.cleaned_data.get("email")
         
         # 1. 檢查冷卻 (使用 'password_reset' 作為 prefix，區隔驗證信)
-        if not is_cooldown(email, action="password_reset"):                   # 1-1. can_send去 cache 查 key ； 回傳 True = 可以寄
+        if not is_cooldown(email, action="password_reset"):                   # 1-1. can_send去 cache 查 key ； 回傳 False = 可以寄
             # 2. 呼叫父類別真正發信
             super().save(**kwargs)
             
             # 3. 標記已發送
             mark_sent(email, action="password_reset")
         else:
-
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"Password reset rate limited for: {email}")
+
 
 # Action Form
 class ResendVerificationEmailForm(TurnstileFormMixin, forms.Form):

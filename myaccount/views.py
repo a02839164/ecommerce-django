@@ -113,10 +113,16 @@ def my_login(request):
         if not user.is_active:
 
             messages.warning(request, 'Your account is inactive. Please verify your email.')
+            return redirect('my-login')
+        
+        elif user.profile.is_google_user:
+
+            messages.error(request, 'This account uses Google Login only. Please sign in with Google instead.')
+            return redirect('my-login')
+
         else:
 
             login(request, user)
-
             messages.success(request, f'Welcome back, {user.username}!')
             return redirect('dashboard')
             
