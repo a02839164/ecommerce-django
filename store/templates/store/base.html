@@ -46,61 +46,54 @@
     
 
 
-    <nav class="navbar navbar-expand-lg bg-primary justify-content-center">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary justify-content-center">
 
+        <a class="navbar-brand main-heading text-white me-5" href="{% url 'store' %}">
+            &nbsp; &nbsp; Buyria — Your Shopping Aria
+        </a>
 
-        <a class="navbar-brand main-heading text-white me-5" href="{% url 'store' %}">&nbsp; &nbsp; Buyria — Your Shopping Aria </a>
         <button
             class="navbar-toggler"
             type="button"
-            data-toggle="collapse"
-            data-target="#navbarNavDropdown"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNavDropdown"
             aria-controls="navbarNavDropdown"
             aria-expanded="false"
             aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse" id="navbarCollapse">
-                
+        <div class="collapse navbar-collapse" id="navbarNavDropdown">
+
+            <!-- 左側 menu -->
             <ul class="navbar-nav me-auto mb-2 mb-md-0">
 
                 <li class="nav-item dropdown">
-                    
-                    <button class=" dropdown-toggle text-white fs-5 bg-transparent border-0"
-                            id="navbarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    Sections
+                    <button class="dropdown-toggle text-white fs-5 bg-transparent border-0"
+                            id="navbarDropdown"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                        Sections
                     </button>
-                    
+
                     <ul class="dropdown-menu shadow-lg border-0 p-2" aria-labelledby="navbarDropdown">
-
                         {% for category in all_categories %}
-                        <li>
-                            <a class="dropdown-item fs-5 py-2" href="{{ category.get_absolute_url }}"> {{ category.name | capfirst }} </a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item fs-5 py-2" href="{{ category.get_absolute_url }}">
+                                    {{ category.name|capfirst }}
+                                </a>
+                            </li>
                         {% endfor %}
-        
-                    
                     </ul>
-
                 </li>
 
             </ul>
 
-        </div>
-
-
-
-        <div class="collapse navbar-collapse text-center" id="navbarNavDropdown">
-            
+            <!-- 右側搜尋 + 登入區 -->
             <ul class="navbar-nav ms-auto">
 
-
-                <!-- search bar -->
-
+                <!-- 搜尋 -->
                 <form class="d-flex me-5" role="search" method="GET" action="{% url 'product-search' %}">
-
-                    <!-- 分類下拉 -->
                     <select class="form-select me-3" name="category" style="width: 150px;">
                         <option value="">All</option>
                         {% for category in all_categories %}
@@ -113,12 +106,10 @@
                         {% endfor %}
                     </select>
 
-                    <!-- 搜尋輸入框 -->
                     <input class="form-control me-3"
                         type="search"
                         name="q"
                         placeholder="Search products..."
-                        aria-label="Search"
                         value="{{ request.GET.q }}">
                     <button class="btn btn-outline-light" type="submit">
                         <i class="fa fa-search"></i>
@@ -126,47 +117,44 @@
                 </form>
 
                 {% if user.is_authenticated %}
-
                     <li class="nav-item me-3">
-                
-                        <a class="nav-link fs-5 text-white text-decoration-none" type="button"  href="{% url 'dashboard' %}"><i class="fa-solid fa-house-chimney-user"></i>&nbsp; Dashboard </a>
-
+                        <a class="nav-link fs-5 text-white text-decoration-none"
+                        href="{% url 'dashboard' %}">
+                        <i class="fa-solid fa-house-chimney-user"></i>&nbsp; Dashboard
+                        </a>
                     </li>
 
                     <li class="nav-item me-3">
-
-                        <a class="nav-link fs-5 text-white text-decoration-none" type="button"  href="{% url 'user-logout' %}"><i class="fa fa-sign-out" aria-hidden="true"></i>&nbsp; Logout </a>
-
+                        <a class="nav-link fs-5 text-white text-decoration-none"
+                        href="{% url 'user-logout' %}">
+                        <i class="fa fa-sign-out"></i>&nbsp; Logout
+                        </a>
                     </li>
 
-                    {% else %}
-
+                {% else %}
                     <li class="nav-item me-3">
-                
-                        <a class="nav-link fs-5 text-white text-decoration-none" type="button"  href="{% url 'register' %}"> Sign Up </a>
-
+                        <a class="nav-link fs-5 text-white text-decoration-none"
+                        href="{% url 'register' %}">
+                        Sign Up
+                        </a>
                     </li>
 
                     <li class="nav-item me-3">
-                
-                        <a class="nav-link fs-5 text-white text-decoration-none" type="button"  href="{% url 'my-login' %}"> Log In </a>
-
+                        <a class="nav-link fs-5 text-white text-decoration-none"
+                        href="{% url 'my-login' %}">
+                        Log In
+                        </a>
                     </li>
                 {% endif %}
-
-                <li class="nav-item me-3">
-
-                    <a type="button" role="button" href="{% url 'cart-summary' %}" class="cart-btn position-relative"> 
-
+                <li class="nav-item me-3 d-flex align-items-center">
+                    <a href="{% url 'cart-summary' %}" class="cart-btn position-relative text-white">
                         <i class="fa-solid fa-cart-shopping fs-4"></i>
-                        &nbsp;
-                        <span id="cart-qty" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" >
-                            <!-- 頁面初次載入購物車數量，使用者操作「加入購物車」前端 AJAX 更新 -->
+                        <span id="cart-qty"
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             {{ cart|length }}
                         </span>
                     </a>
                 </li>
-                &nbsp; &nbsp; &nbsp;
             </ul>
         </div>
     </nav>
