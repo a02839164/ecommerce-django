@@ -1,4 +1,3 @@
-# core/utils/turnstile.py
 import requests
 from django.conf import settings
 

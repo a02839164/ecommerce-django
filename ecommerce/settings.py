@@ -103,7 +103,6 @@ TEMPLATES = [
                 #全域context
                 'store.context_processors.categories',        
                 'cart.context_processors.cart',
-                # 'core.context_processors.turnstile.turnstile',
                 'core.security.turnstile.context_processors.turnstile',
             ],
         },

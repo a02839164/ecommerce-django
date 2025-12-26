@@ -1,9 +1,6 @@
-# core/context_processors/turnstile.py
 from django.conf import settings
 
 
 def turnstile(request):
 
-    return {
-        "TURNSTILE_SITE_KEY": settings.TURNSTILE_SITE_KEY,
-    }
+    return {"TURNSTILE_SITE_KEY": settings.TURNSTILE_SITE_KEY,}

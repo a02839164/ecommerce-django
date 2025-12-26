@@ -1,5 +1,3 @@
-# core/utils/rate_limit.py
-
 from django.core.cache import cache
 
 
@@ -12,7 +10,7 @@ class CheckoutRateLimiter:
     LOCK_SECONDS = 60 * 60  # 60 分鐘
 
     @classmethod
-    def _get_user_key(cls, user_id):               #產生一個專屬的 cache key (地址)
+    def _get_user_key(cls, user_id):               #產生一個專屬的 cache key 標籤
         return f"checkout_fail_user:{user_id}"
 
     @classmethod
@@ -30,9 +28,9 @@ class CheckoutRateLimiter:
         """
         結帳失敗次數 +1
         """
-        key = cls._get_user_key(user_id)                    # 產生使用者cache key(地址)
-        count = cache.get(key, 0)                           # 用使用者地址查到專屬的cache後 回傳value，如果沒有資料，就回傳 0 
-        cache.set(key, count + 1, timeout=cls.LOCK_SECONDS) # 用同個地址，把新的value寫回cache， 並且 60分後如果沒更新，就自動刪掉
+        key = cls._get_user_key(user_id)                    # 產生使用者cache key標籤
+        count = cache.get(key, 0)                           # 用標籤查到專屬cache，找出value 存進變數 count，如果沒有，就預設 0
+        cache.set(key, count + 1, timeout=cls.LOCK_SECONDS) # 設定專屬cache， value +1再寫回去， 60分後如果沒更新，就自動刪掉
 
     @classmethod
     def clear(cls, user_id):

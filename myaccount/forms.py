@@ -10,7 +10,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from .models import Profile
 from django.core.exceptions import ValidationError
 from core.security.turnstile.forms import TurnstileFormMixin
-from core.security.email_verification.cooldown import can_send, mark_sent
+from core.security.email_verification.cooldown import is_cooldown, mark_sent
 from PIL import Image
 
 # Registration form
@@ -95,7 +95,7 @@ class TurnstilePasswordResetForm(TurnstileFormMixin, PasswordResetForm):
         email = self.cleaned_data.get("email")
         
         # 1. 檢查冷卻 (使用 'password_reset' 作為 prefix，區隔驗證信)
-        if can_send(email, action="password_reset"):                   # 1-1. can_send去 cache 查 key ； 回傳 True = 可以寄
+        if not is_cooldown(email, action="password_reset"):                   # 1-1. can_send去 cache 查 key ； 回傳 True = 可以寄
             # 2. 呼叫父類別真正發信
             super().save(**kwargs)
             

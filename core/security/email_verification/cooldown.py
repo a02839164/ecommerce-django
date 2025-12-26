@@ -9,7 +9,7 @@ def _generate_key(identifier, action: str) -> str:
     """
     內建私有函數：
     1. 統一把 identifier 轉為字串
-    2. 如果是 email，進行 SHA256 加密防止明文外洩
+    2. 進行 SHA256 加密防止明文外洩
     3. 加上 action 前綴
     """
     ident_str = str(identifier).strip().lower()
@@ -20,9 +20,9 @@ def _generate_key(identifier, action: str) -> str:
     return f"limit:{action}:{hashed_ident}"
 
 
-def can_send(identifier, action: str) -> bool:
+def is_cooldown(identifier, action: str):
     key = _generate_key(identifier, action)
-    return not cache.get(key)
+    return bool(cache.get(key))
 
 
 def mark_sent(identifier, action: str):
