@@ -6,37 +6,47 @@
 {% block content %}
 
     <!-- Introduction section -->
-    <section class="py-4 text-center container">
-        <div class="row py-lg-5">
-            <div class="col-lg-6 col-md-8 mx-auto">
-                <h4>  Buyria — Shopping made effortless. </h4>
-                <br>
-                <p class="lead text-muted">
-                Discover the joy of seamless shopping.
-                </p>
-                <br>
-                <a href="{% url 'register' %}" class="btn btn-primary my-2"><i class="fa-solid fa-user-plus"></i>&nbsp; Create an account </a>
-            </div>
+    <section class="py-3 text-center container">
+        <div class="row py-lg-3">
+          <div class="col-lg-6 col-md-8 mx-auto">
+            <p class="h5 text-secondary fw-semibold mb-2">
+              Simple. Fast. Enjoyable.
+            </p>
+          </div>
         </div>
     </section>
-
    <!-- All products section -->
-      
-    <div class="album py-5 bg-light">
+    <div class="album py-4 bg-light">
         
         <div class="container"style="max-width: 1800px;" >
     
-          <div class="pb-3 h5"> Top 10 Hot Products </div>
-
-
+          <div class="pb-2 h5"> Most Viewed Products (Top 10) </div>
           <hr>
-
           <br>
-          
-
+          <div class="row row-cols-2 row-cols-sm-5 row-cols-xl-10-custom g-2">
+            {% for product in most_viewed_products %}
+            <div class="col">
+              <div class="card shadow-sm h-100 p-2" style="font-size: 0.8rem;">
+                <a href="{{ product.get_absolute_url }}"><img src="{{ product.thumbnail.url }}" class="img-fluid rounded" style="object-fit: contain; height: 150px;" alt="{{ product.title }}"></a>
+                <div class="card-body">
+                  <p class="card-text">
+                    <a class="text-info text-decoration-none" href="{{ product.get_absolute_url }}">{{product.title| capfirst}}</a>
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5> $ {{ product.price }}</h5>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <br>
+          <div class="pb-2 h5"> Best Selling Products (Top 10) </div>
+          <hr>
+          <br>
           <div class="row row-cols-2 row-cols-sm-5 row-cols-xl-10-custom g-2">
 
-            {% for product in hot_products %}
+            {% for product in best_selling_products %}
     
             <div class="col">
               <div class="card shadow-sm h-100 p-2" style="font-size: 0.8rem;">
@@ -50,12 +60,10 @@
                   </div>
                 </div>
               </div>
-            
             </div>
-    
-            
             {% endfor %}
           </div>
+
           {% if recent_views.exists %}
           <br>
           <br>
