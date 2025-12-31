@@ -85,16 +85,14 @@
 * **後端框架：** Django 5.x, Python 3.10+
 * **資料庫：** PostgreSQL（Google Cloud SQL）
 * **非同步任務：** Celery + Redis
-* **金流與物流服務：** PayPal REST API（含 Webhook 驗證）、Shippo API
-* **Email 服務：** SendGrid API
-* **網路及安全：** Cloudflare (DNS, CDN, SSL/TLS)、Cloudflare Turnstile (Bot Protection)
-* **身份驗證：** Google OAuth 2.0
+* **第三方API服務：** Google OAuth 2.0、PayPal REST API（含 Webhook 驗證）、Shippo API、SendGrid API
+* **網路及安全：** Cloudflare、Cloudflare Turnstile
 
-### 部署架構 (GCP + Cloudflare)
+### 部署架構
 * **流量入口：** Cloudflare負責 DNS 解析、CDN 全球內容加速，提供 Edge SSL 憑證管理並過濾惡意請求。
 * **安全防禦：** GCP VPC 防火牆實施 IP 白名單機制，僅允許來自 Cloudflare 官方指定網段的 TCP 80/443 請求，徹底隱藏源站並防止繞過攻擊。
 * **應用執行：** Google Cloud Platform VM（Ubuntu） ； 使用 Gunicorn 作為 WSGI Server 處理 Django 邏輯。
-* **反向代理與端到端加密：** Nginx + Let's Encrypt 證書，負責源站端加密通訊與請求分流。
+* **HTTPS 反向代理：** Nginx + Let's Encrypt 證書，負責源站端加密通訊與請求分流。
 * **靜態與媒體檔案：** Google Cloud Storage
 * **敏感資訊管理：** 透過環境變數（`.env`）管理敏感資訊，以 `.env.example` 作為設定範例（未納入版本控制）
 
