@@ -72,3 +72,7 @@
 }
 
 
+.footer-category-2col {
+    column-count: 2;
+    column-gap: 30px;
+}

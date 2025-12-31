@@ -64,11 +64,12 @@
             {% endfor %}
           </div>
 
-          {% if recent_views.exists %}
+
           <br>
           <br>
           <div class="pb-3 h5"> Recently Viewed </div>
           <hr>
+          {% if recent_views.exists %}
           <br>
           <div class="row row-cols-2 row-cols-sm-5 row-cols-xl-10-custom g-2">
             {% for product in recent_views %}

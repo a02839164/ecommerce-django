@@ -173,6 +173,63 @@
         {% block content %} 
         {% endblock %}
     </body>
+    <footer class="bg-primary text-white mt-5 pt-5 pb-3">
+        <div class="container">
+            <div class="row">
+
+            <!-- Navigation / Functional Links -->
+            <div class="col-md-4 mb-4">
+                <h5 class="fw-bold">Browse</h5>
+                <ul class="list-unstyled footer-category-2col">
+                    <li><a href="{% url 'store' %}" class="text-secondary text-decoration-none">Shop</a></li>
+                    <li><a href="#" class="text-secondary text-decoration-none">Categories</a></li>
+
+                    {% for c in all_categories %}
+                        <li>
+                            <a href="{{ c.get_absolute_url }}" class="text-secondary text-decoration-none">
+                                {{ c.name|capfirst }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- User / Orders / Important Pages -->
+            <div class="col-md-4 mb-4">
+                <h5 class="fw-bold">User & Orders</h5>
+                <ul class="list-unstyled">
+                <li><a href="{% url 'cart-summary' %}" class="text-secondary text-decoration-none">Cart</a></li>
+                <li><a href="{% url 'dashboard' %}" class="text-secondary text-decoration-none">Dashboard</a></li>
+                <li><a href="{% url 'track-orders' %}" class="text-secondary text-decoration-none">My Orders</a></li>
+                </ul>
+            </div>
+
+            <!-- Support / Trust -->
+            <div class="col-md-4 mb-4">
+                <h5 class="fw-bold">Customer Support</h5>
+                <ul class="list-unstyled">
+                <li><a href="#" class="text-secondary text-decoration-none">FAQ</a></li>
+                <li><a href="#" class="text-secondary text-decoration-none">Refund / Return Policy</a></li>
+                <li><a href="#" class="text-secondary text-decoration-none">Shipping Policy</a></li>
+                </ul>
+
+                <p class="fw-bold">Secure Payments</p>
+                <div class="d-flex align-items-center">
+                    <i class="fa-brands fa-cc-paypal fa-2x me-3"></i>
+                    <i class="fa-brands fa-cc-visa fa-2x me-3"></i>
+                    <i class="fa-brands fa-cc-mastercard fa-2x"></i>
+                </div>
+            </div>
+
+            </div>
+
+            <hr class="border-secondary">
+
+            <div class="text-center text-secondary small">
+            © 2025-2026 Buyria — All rights reserved
+            </div>
+        </div>
+        </footer>
     <script src="{% static 'js/app.js' %}"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </html>

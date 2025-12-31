@@ -10,7 +10,7 @@ def store(request):
 
     all_product = Product.objects.filter(is_fake=False)
     most_viewed_products = get_most_viewed_products(days=7, limit=10)
-    best_selling_products = get_best_selling_products(days=30, limit=10)
+    best_selling_products = get_best_selling_products(days=90, limit=10)
     recent_views = get_recent_products(request, limit=10)
 
     context = {
