@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .webhook_helpers import verify_paypal_signature, get_capture_id_from_links
 from .event_handler import PaypalEventHandler
 from payment.models import Order
-
+from django.db import transaction
 
 logger = logging.getLogger(__name__) 
 
@@ -46,31 +46,41 @@ def paypal_webhook(request):                  # 統一使用 dict.get() + 預設
 
 
     # Step-3：尋找訂單
-    order = None
+    try:
+        with transaction.atomic():
+            # 建立一個基礎查詢集
+            queryset = Order.objects.select_for_update()
 
-        # 用 order_id 找
-    if order_id:
-        order = Order.objects.filter(paypal_order_id=order_id).first()
+            order = None
 
-        # 付款用 capture_id_from_resource_id 找
-    if not order and capture_id_from_resource_id:
-        order = Order.objects.filter(paypal_capture_id=capture_id_from_resource_id).first()
+            # 用 order_id 找
+            if order_id:
+                order = queryset.filter(paypal_order_id=order_id).first()
 
-        # 退款用 capture_id_from_links 找
-    if not order and capture_id_from_links:
-        order = Order.objects.filter(paypal_capture_id=capture_id_from_links).first()
+            # 付款用 capture_id_from_resource_id 找
+            if not order and capture_id_from_resource_id:
+                order = queryset.filter(paypal_capture_id=capture_id_from_resource_id).first()
 
-    if not order:
-        logger.warning(
-            f"Webhook received but ORDER NOT FOUND → "
-            f"order_id={order_id}, "
-            f"resource_id={capture_id_from_resource_id}, "
-            f"capture_from_links={capture_id_from_links}"
-        )
-        return JsonResponse({"status": "order_not_found"}, status=200)
+            # 退款用 capture_id_from_links 找
+            if not order and capture_id_from_links:
+                order = queryset.filter(paypal_capture_id=capture_id_from_links).first()
+
+            if not order:
+                logger.warning(
+                    f"Webhook received but ORDER NOT FOUND → "
+                    f"order_id={order_id}, "
+                    f"resource_id={capture_id_from_resource_id}, "
+                    f"capture_from_links={capture_id_from_links}"
+                )
+                return JsonResponse({"status": "order_not_found"}, status=200)
 
 
-    # Step-4 更新訂單狀態
-    PaypalEventHandler.handle(event_type, resource, order)
+            # Step-4 更新訂單狀態
+            PaypalEventHandler.handle(event_type, resource, order)
+
+    except Exception as e:
+
+        logger.error(f"Error processing webhook: {str(e)}", exc_info=True)
+        return JsonResponse({"status": "error", "message": str(e)}, status=500)
 
     return JsonResponse({"status": "ok"})

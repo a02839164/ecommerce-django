@@ -11,25 +11,28 @@ class PaypalEventHandler:
 
         logger.info(f"Updating order #{order.id} with event {event_type}")
 
-        order.verify_webhook = event_type
 
         if event_type == "PAYMENT.CAPTURE.COMPLETED":
 
             if order.payment_status != "COMPLETED":                   # 冪等保護 / 避免重複扣
                 InventoryService.apply_inventory_sale(order)          # 正式扣庫存
+                order.payment_status = "COMPLETED"
         
         elif event_type in ["CHECKOUT.ORDER.CANCELLED","PAYMENT.CAPTURE.DENIED","PAYMENT.CAPTURE.EXPIRED",]:
 
             if order.payment_status not in ["CANCELLED", "FAILED", "EXPIRED"]:
                 InventoryService.release_stock(order)                  # 釋放預扣
+                order.payment_status = "CANCELLED"
 
 
         elif event_type == "PAYMENT.CAPTURE.REFUNDED":
 
             if order.payment_status != "REFUNDED":
                 InventoryService.apply_inventory_refund(order)   
+                order.payment_status = "REFUNDED"
 
-        order.save(update_fields=["verify_webhook"])
+        order.verify_webhook = event_type
+        order.save(update_fields=["verify_webhook", "payment_status"])
 
         logger.info(
             f"Order #{order.id} UPDATED → "

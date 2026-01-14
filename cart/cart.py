@@ -1,6 +1,6 @@
 from decimal import Decimal
 from store.models import Product
-
+import copy
 
 
 class Cart():
@@ -27,7 +27,7 @@ class Cart():
 
             self.cart[product_id]['qty'] += product_qty    # 累加
         else:
-            self.cart[product_id] = {'price': str(product.price), 'qty': product_qty}   #price 存成 str，Decimal不能直接丟進 session（不可序列化）
+            self.cart[product_id] = {'qty': product_qty}   # 只存數量
 
         self.session.modified = True   #session 的內容有改過，存回去
 
@@ -72,28 +72,35 @@ class Cart():
 
         all_product_ids = self.cart.keys()     #取出字典中所有的key
 
-        products = Product.objects.filter(id__in=all_product_ids)   # 一次從Product抓出所有商品； id__in = id在這個清單裡 
-
-        import copy
+        products = Product.objects.filter(id__in=all_product_ids)   # 一次從Product抓出所有購物車商品； id__in = id在這個清單裡 
 
         cart = copy.deepcopy(self.cart)
 
          # 增強數據（塞入完整產品物件）
         for product in products:             
-
-            cart[str(product.id)]['product'] = product  # 字典中新增一個名為 'product' 的鍵，並把完整的 Product 物件賦值給它
+            product_id = str(product.id)
+            cart[product_id]['product'] = product  # 字典中新增一個名為 'product' 的鍵，並把完整的 Product 物件賦值給它
+            cart[product_id]['price'] = product.price
 
         for item in cart.values():
 
-            item['price'] = Decimal(item['price'])      # 字串轉換為 Decimal 型別
-            item['total'] = item['price'] * item['qty'] # 單一商品的小計
+            if 'product' in item:
 
-            yield item
+                item['total'] = item['price'] * item['qty'] # 單一商品的小計
+
+                yield item
 
 
     def get_total(self):
 
-        return sum(Decimal(item['price'])* item['qty'] for item in self.cart.values())
+        all_product_ids = self.cart.keys()
+        products = Product.objects.filter(id__in = all_product_ids)
+
+         # 建立一個查找表 { "id": price }
+        price_map = {str(p.id): p.price for p in products}
+        
+            # 計算總額
+        return sum(price_map.get(p_id, 0) * item['qty']  for p_id, item in self.cart.items() if p_id in price_map)
         
 
     def get_shipping_fee(self):

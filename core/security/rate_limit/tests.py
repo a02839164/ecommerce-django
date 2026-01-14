@@ -1,8 +1,9 @@
 from django.test import TestCase
 from django.core.cache import cache
 from core.security.rate_limit.limiter import CheckoutRateLimiter
+from django.test import override_settings
 
-
+@override_settings(CACHES={'default': {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache'}})
 class CheckoutRateLimiterTest(TestCase):
 
     def setUp(self):

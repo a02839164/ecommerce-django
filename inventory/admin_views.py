@@ -4,15 +4,13 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from .services import InventoryService
 from store.models import Product
-from inventory.models import InventoryLog
 from django.utils import timezone
-from django.db import transaction
-from django.db.models import F
 import csv
-import io
+from django.core.cache import cache
+import uuid
 
 
-#單一商品庫存
+# 單一商品庫存
 @staff_member_required
 def adjust_stock(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -20,7 +18,6 @@ def adjust_stock(request, product_id):
     if request.method == "POST" and not request.user.is_superuser:
         messages.error(request, "您沒有權限調整庫存")
         return redirect(request.path)
-
 
     if request.method == "POST" and request.user.is_superuser:
         qty = int(request.POST.get("qty"))
@@ -44,7 +41,6 @@ def adjust_stock(request, product_id):
     return render(request, "inventory/adjust_stock.html", {"product": product})
 
 
-
 # 下載全部商品庫存（ 含 reserved 與 available）
 @staff_member_required
 def download_all_stock_csv(request):
@@ -55,27 +51,13 @@ def download_all_stock_csv(request):
     response["Content-Disposition"] = f'attachment; filename="all_product_stock_{today_str}.csv"'
 
     writer = csv.writer(response)
-    writer.writerow([
-        "id",
-        "title",
-        "stock",
-        "reserved_stock",
-        "available_stock",
-    ])
+    writer.writerow(["id","title","stock","reserved_stock","available_stock"])
 
-    queryset = Product.objects.filter(is_fake=False).only(
-        "id", "title", "stock", "reserved_stock"
-    )
+    queryset = Product.objects.filter(is_fake=False).only("id", "title", "stock", "reserved_stock")
 
     for p in queryset:
         available = p.stock - p.reserved_stock
-        writer.writerow([
-            p.id,
-            p.title,
-            p.stock,
-            p.reserved_stock,
-            available,
-        ])
+        writer.writerow([p.id, p.title, p.stock, p.reserved_stock, available])
 
     return response
 
@@ -89,170 +71,66 @@ def bulk_update_stock(request):
     if "download_all" in request.GET:
         return download_all_stock_csv(request)
 
-    # Step 1：收到 CSV → 預覽差異
+    # Step 1：預覽
     if request.method == "POST" and "preview" in request.POST:
 
         file = request.FILES.get("file")
         if not file:
             messages.error(request, "格式錯誤，請選擇 CSV 檔案。")
             return redirect("inventory:bulk-stock")
+        
+        if not request.user.is_superuser:
+            messages.error(request, "您沒有權限進行庫存匯入。")
+            return redirect("inventory:bulk-stock")
 
         try:
-            decoded = file.read().decode("utf-8")   #讀取csv， decoded UTF-8純字串
-            io_string = io.StringIO(decoded)        #字串包裝成檔案物件
-            reader = csv.DictReader(io_string)      #讀取「檔案狀態」資料
 
-            preview_list = []
-            error_list = []
+            decoded = file.read().decode("utf-8-sig")   # 讀取csv
+            preview_list, error_list = InventoryService.parse_and_validate_csv(decoded)
 
-            for row in reader:
-                product_id = row.get("id")
-                new_stock_raw = row.get("stock")
+            cache_key = f"bulk_csv_{uuid.uuid4()}"
+            cache.set(cache_key, decoded, timeout=600)
+            request.session["bulk_stock_cache"] = cache_key
 
-                # 檢查格式
-                if not product_id or not new_stock_raw:
-                    error_list.append(f"缺少資料：{row}")
-                    continue
-
-                try:
-                    new_stock = int(new_stock_raw)
-                except:
-                    error_list.append(f"無效的庫存數值：{new_stock_raw}")
-                    continue
-
-                # 查商品（排除 fake）
-                try:
-                    product = Product.objects.get(id=product_id, is_fake=False)
-                except Product.DoesNotExist:
-                    error_list.append(f"找不到商品 ID：{product_id}")
-                    continue
-
-                old_stock = product.stock
-                diff = new_stock - old_stock
-
-                if diff == 0:
-                    continue
-
-                preview_list.append({
-                    "product": product,
-                    "old": old_stock,
-                    "new": new_stock,
-                    "diff": diff,
-                })
-
-            # 暫存原始輸入 CSV 內容到 session，稍後用於「真正匯入」
-            request.session["bulk_csv"] = decoded
-
-            return render(request, "inventory/bulk_stock_preview.html", {
-                "preview_data": preview_list,
-                "errors": error_list,
-            })
+            return render(request, "inventory/bulk_stock_preview.html", {"preview_data":preview_list,"errors":error_list,})
 
         except Exception as e:
             messages.error(request, f"解析 CSV 發生錯誤：{e}")
             return redirect("inventory:bulk-stock")
 
 
-        # Step 2：使用者按「確認匯入」（一般調整模式，不清 reserved）
+    # Step 2：預覽後匯入
     if request.method == "POST" and "confirm_import" in request.POST:
+        cache_key = request.session.get("bulk_stock_cache")
+        csv_data = cache.get(cache_key)
 
+        if not csv_data:
+            messages.error(request, "暫存資料已過期")
+            return redirect("inventory:bulk-stock")
+        
         if not request.user.is_superuser:
             messages.error(request, "您沒有權限進行庫存匯入。")
             return redirect("inventory:bulk-stock")
-
-        csv_data = request.session.get("bulk_csv")
-
-        if not csv_data:
-            messages.error(request, "找不到要匯入的 CSV 資料（session 遺失）。")
-            return redirect("inventory:bulk-stock")
-
-        io_string = io.StringIO(csv_data)
-        reader = csv.DictReader(io_string)
-
-        success_rows = []
-        error_rows = []
-        updated_count = 0
-
         try:
-            with transaction.atomic():
+            preview_list, error_list = InventoryService.parse_and_validate_csv(csv_data)
 
-                for row in reader:
+            if not preview_list and error_list:
+            
+                messages.error(request, "資料解析後發現嚴重錯誤，無法匯入。")
+                return redirect("inventory:bulk-stock")
+            
+            updated, success = InventoryService.execute_bulk_import(preview_list, request.user)
 
-                    # 整列空白跳過
-                    if not any(row.values()):
-                        continue
+            cache.delete(cache_key)
+            if "bulk_stock_cache" in request.session:
+                del request.session["bulk_stock_cache"]
 
-                    product_id = (row.get("id") or "").strip()
-                    new_stock_raw = (row.get("stock") or "").strip()
-
-                    # id 或 stock 空白 → 跳過並記錄錯誤
-                    if not product_id or not new_stock_raw:
-                        error_rows.append(f"缺少欄位（id 或 stock）：{row}")
-                        continue
-
-                    # stock 必須是整數 
-                    try:
-                        new_stock = int(new_stock_raw)
-                    except ValueError:
-                        error_rows.append(f"無效的庫存數值：{new_stock_raw}")
-                        continue
-
-                    # 鎖商品，防止下單 + 後台同時改庫存
-                    try:
-                        product = (Product.objects.select_for_update().get(id=product_id, is_fake=False))
-                    except Product.DoesNotExist:
-                        error_rows.append(f"找不到商品 ID：{product_id}")
-                        continue
-
-                    old_stock = product.stock
-                    old_reserved = product.reserved_stock
-                    diff = new_stock - old_stock
-
-                    #  若完全沒變化 → 跳過
-                    if diff == 0:
-                        continue
-
-                    #  最關鍵安全防線（新庫存要大於保留庫存）
-                    if new_stock < old_reserved:
-                        error_rows.append(
-                            f"商品 {product.id} 匯入失敗："
-                            f"新庫存 {new_stock} < 目前預扣 {old_reserved}"
-                        )
-                        continue
-
-                    #  只調整 stock，不動 reserved_stock
-                    product.stock = new_stock
-                    product.save(update_fields=["stock"])
-
-                    #  寫入 Log
-                    InventoryLog.objects.create(
-                        product=product,
-                        quantity=diff,
-                        action="BULK_UPDATE",
-                        note=f"BULK IMPORT (NORMAL): {old_stock} → {new_stock}",
-                        performed_by=request.user,
-                    )
-                    # 顯示成功匯入清單
-                    success_rows.append({
-                        "product": product,
-                        "old": old_stock,
-                        "new": new_stock,
-                        "diff": diff,
-                    })
-                    # 顯示成功匯入筆數
-                    updated_count += 1
-
+            return render(request, "inventory/bulk_stock_result.html", {"updated":updated, "success":success})
+        
         except Exception as e:
-            messages.error(request, f"批次匯入失敗，已回滾：{e}")
+
+            messages.error(request, f"匯入失敗：{e}")
             return redirect("inventory:bulk-stock")
-
-        # 清除 session
-        request.session.pop("bulk_csv", None)
-
-        return render(request, "inventory/bulk_stock_result.html", {
-            "updated": updated_count,
-            "success": success_rows,
-            "errors": error_rows,
-        })
+        
 
     return render(request, "inventory/bulk_stock.html")

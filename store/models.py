@@ -1,7 +1,7 @@
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
-
+import uuid
 class Category(models.Model):
     name = models.CharField(max_length=250 , db_index=True)
     slug = models.SlugField(max_length=250, unique=True)
@@ -28,7 +28,7 @@ class Product(models.Model):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
 
     price = models.DecimalField(max_digits=8,decimal_places=2)
-    discountpercentage= models.FloatField(blank=True, null=True)
+    discountpercentage= models.DecimalField(max_digits=5,  decimal_places=2, default=0, help_text="折扣百分比")
 
     stock = models.PositiveIntegerField(default=0)
     reserved_stock = models.IntegerField(default=0)
@@ -66,14 +66,8 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
 
         if not self.slug:
-            base_slug = slugify(self.title)
-            slug = base_slug
-            counter = 1
-            while Product.objects.filter(slug=slug).exists():
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-            
-            self.slug = slug
+            self.slug = f"{slugify(self.title)}-{uuid.uuid4().hex[:8]}"
+
         super().save(*args, **kwargs)
 
     @property

@@ -14,7 +14,7 @@ HEADERS = {
 def get_order_weight(order):
     total = 0
     for item in order.orderitem_set.all():
-        total += item.product.weight * item.quantity
+        total += (item.product.weight or 0)* item.quantity
     return total
 
 
@@ -57,7 +57,7 @@ def create_shipment(order, address1, address2, city, state, zipcode):
         "async": False,
     }
 
-    response = requests.post(url, headers=HEADERS, json=data)
+    response = requests.post(url, headers=HEADERS, json=data, timeout=10)
     response.raise_for_status()
     return response.json()
 

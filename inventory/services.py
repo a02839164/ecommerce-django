@@ -3,7 +3,8 @@ from store.models import Product
 from django.db.models import F
 from django.db import transaction
 from django.db.models.functions import Greatest
-
+import csv
+import io
 
 class InventoryService:
 
@@ -34,6 +35,9 @@ class InventoryService:
     @transaction.atomic
     def release_stock(order):
 
+        if order.payment_status == "CANCELLED":
+            return
+
         for item in order.orderitem_set.all():
             product = Product.objects.select_for_update().get(pk=item.product_id)
 
@@ -47,12 +51,14 @@ class InventoryService:
                 action="RELEASE",
                 note=f"RELEASE for order {order.id}",
             )
-        order.payment_status = "CANCELLED"
-        order.save(update_fields=["payment_status"])
+
 
     @staticmethod
     @transaction.atomic
     def apply_inventory_sale(order):
+
+        if order.payment_status == "COMPLETED":
+            return
 
         for item in order.orderitem_set.all():
             product = Product.objects.select_for_update().get(pk=item.product_id)
@@ -72,8 +78,6 @@ class InventoryService:
                 note=f"Order #{order.id} PayPal SALE",
             )
 
-        order.payment_status = "COMPLETED"
-        order.save(update_fields=["payment_status"])
 
     @staticmethod
     @transaction.atomic
@@ -97,9 +101,6 @@ class InventoryService:
                 action="REFUND",
                 note=f"Order #{order.id} PayPal REFUND",
             )
-
-        order.payment_status = "REFUNDED"
-        order.save(update_fields=["payment_status"])
 
 
     @staticmethod             
@@ -139,3 +140,82 @@ class InventoryService:
             note=note,
             performed_by=user,
         )
+
+    @staticmethod
+    def parse_and_validate_csv(csv_data):
+
+        io_string = io.StringIO(csv_data)
+        reader = csv.DictReader(io_string)
+        
+        preview_list = []
+        error_list = []
+
+        for row in reader:
+            if not any(row.values()): 
+                continue
+            
+            pid = (row.get("id") or "").strip()
+            raw_s = (row.get("stock") or "").strip()
+
+            if not pid or not raw_s:
+                error_list.append(f"缺少資料：{row}")
+                continue
+
+            try:
+                new_stock = int(raw_s)
+                product = Product.objects.get(id=pid, is_fake=False)
+                
+                old_stock = product.stock
+                diff = new_stock - old_stock
+                
+                # 只有變動的才放入預覽
+                if diff != 0:
+                    preview_list.append({
+                        "product": product,
+                        "old": old_stock,
+                        "new": new_stock,
+                        "diff": diff,
+                        "reserved": product.reserved_stock
+                    })
+            except Product.DoesNotExist:
+                error_list.append(f"找不到商品 ID：{pid}")
+            except ValueError:
+                error_list.append(f"無效的庫存數值：{raw_s}")
+            except Exception as e:
+                error_list.append(f"未知錯誤：{str(e)}")
+
+        return preview_list, error_list
+
+    @staticmethod
+    def execute_bulk_import(preview_data, user):
+
+        updated_count = 0
+        success_rows = []
+        
+        with transaction.atomic():
+            for item in preview_data:
+                product = item['product']
+                new_stock = item['new']
+                
+                # 再次鎖定並執行最終檢查
+                locked_product = Product.objects.select_for_update().get(id=product.id)
+                
+                if new_stock < locked_product.reserved_stock:
+                    raise Exception(f"ID {product.id} 新庫存不可小於預扣量")
+
+                old_stock = locked_product.stock
+                locked_product.stock = new_stock
+                locked_product.save(update_fields=["stock"])
+
+                InventoryLog.objects.create(
+                    product=locked_product,
+                    quantity=new_stock - old_stock,
+                    action="BULK_UPDATE",
+                    note="Service Bulk Import",
+                    performed_by=user
+                )
+                
+                success_rows.append(item)
+                updated_count += 1
+                
+        return updated_count, success_rows
