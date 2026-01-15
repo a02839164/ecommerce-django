@@ -1,119 +1,131 @@
-# Django 生產級電商平台
+# Django 實作的電商後端系統
 
 [![Live Demo](https://img.shields.io/badge/線上-Demo-brightgreen?style=for-the-badge)](https://buyriastore.com)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.x-blue?style=for-the-badge)](https://www.djangoproject.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud_SQL-blue?style=for-the-badge)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/Redis-Session_%26_Cache-red?style=for-the-badge)](https://redis.io/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-DNS_%26_CDN-orange?style=for-the-badge)](https://www.cloudflare.com/)
 [![GCP](https://img.shields.io/badge/GCP-Compute_Engine-blue?style=for-the-badge)](https://cloud.google.com/)
 
-## 專案概述
+## 概述
 
-這是一個完整、可實際營運的電商後端系統，功能涵蓋商品瀏覽、購物車、金流結帳、物流追蹤、庫存管理、會員與客服工單。
+「這是我為了模擬真實電商營運環境所開發的專案。除了基礎功能，花了些心思在處理『庫存超賣』、『金流異步回傳』以及『系統架構重構』等實際開發中會遇到的難題。」
 
-開發目標 **「打造可實際營運的生產級後端系統」**。專注於真實情境下的核心：
-* **資料一致性 (Data Consistency)：** 確保交易、庫存與金流狀態的絕對同步。
-* **高併發控制 (Concurrency Control)：** 預防超賣、搶貨等問題。
-* **系統可維護性：** 透過清晰架構降低技術債。
+開發過程中，特別著重於以下挑戰：
+* **確保資料一致性：** 處理交易與金流 Webhook 的同步，保證訂單狀態絕對準確。
+* **高併發下的庫存控制：** 透過資料庫事務 (Transaction) 與預扣機制，預防搶購時發生超賣問題。
+* **系統的長期維護性：** 實作 Service Layer 模式來封裝商業邏輯，避免代碼變得臃腫難以維護。
 
 ---
 
-##  核心設計決策與工程亮點
+##  設計決策
 
-### 1. 商品搜尋效能優化：從 2.6 秒到 30 毫秒
+### 1. 搜尋效能優化：從 2.6 秒到 30 毫秒
+**遇到的問題：**
+當引入商品資料量至百萬級別時，單純使用 Django ORM 模糊搜尋 (`icontains`) 會觸發全表掃描，導致查詢延遲嚴重（約 2.6 秒）。
 
-**挑戰：**
-當商品資料量達到百萬級別時，單純使用 Django ORM 的模糊搜尋 (`icontains`) 會觸發全表掃描（Full Table Scan），導致查詢延遲嚴重（約 2.6 秒）。
-
-**解決方案：**
-我在資料庫層級實現了混合索引策略：
+**我的做法：**
 * **B-tree Index：** 用於處理分類、價格排序及精準的前綴比對。
 * **GIN Trigram Index (`pg_trgm`)：** 專門用於高效處理模糊搜尋 (`ILIKE %keyword%`)。
 
-**成果：**
-在壓力測試中，模糊搜尋的查詢時間由約 2.6 秒大幅降低至 **約 30 毫秒**，**效能提升超過 80 倍**，確保了使用者體驗的流暢度。
+**帶來的改變：**
+在壓力測試中，模糊搜尋從「明顯卡頓」變成**秒開**(2.6秒降至30毫秒)，效能提升**80倍**，不僅解決搜尋延遲問題，也讓整體操作流暢很多
 
-### 2. 結帳流程控制與顯式流程
 
-**權衡與取捨：**
-雖然 Django Signals 可以「自動」觸發訂單後續行為，但在涉及金流與庫存的關鍵流程中，我選擇**顯式 (Explicit) 流程控制**。
+### 2. Redis 實務應用 & 配置
+**為什麼使用 Redis：** 
+為了提升系統回應速度，引入 Redis 作為記憶體資料庫。將原本放在資料庫或檔案系統的 Session 與常用資料快取 Cache 移至 Redis，大幅減少磁碟 I/O，讓系統在高流量下保持低延遲。但這會產生一個風險：如果 Redis 沒有分別配置，會導致 Session 與 Cache 功能錯亂混淆(如:所有在線上的使用者被強制登出)，對平台來說是糟糕的體驗。
 
-**設計決策：**
-* **流程協調者：** `CheckoutService` 集中負責串接付款、訂單建立、庫存預扣與通知觸發的執行順序。
-* **優勢：** 這種作法能讓流程執行順序一目瞭然，不僅除錯效率高，也大幅降低了維護時的隱性風險。
+**我的做法：**
+* **資料庫區隔：**在 Redis 配置了不同的資料庫編號，讓 Session 儲存與快取資料徹底分開。
+* **帶來的價值：**使用 Redis 與配置確保穩定性。不僅可以放心執行快取維護或清理，完全不會影響到使用者的登入狀態，更符合真實環境的運作標準。
 
-### 3. 金流狀態管理：PayPal Webhook 作為最終可信來源 
 
-不依賴前端或即時 API 回傳的結果，而是將 **PayPal Webhook** 視為最終可信來源。
+### 3. 金流 Webhook 與狀態一致性
+**設計初衷：**
+串接金流選擇將 PayPal Webhook 異步回傳視為系統狀態更新的最終可信來源，規避網路環境影響或人為竄改的風險。
 
-* **安全性：**  Webhook 請求皆需通過官方**簽章驗證**，防止偽造。
-* **狀態一致性：** 系統狀態嚴格以 Webhook 的 `event_type` 為準，使交易狀態（成功、失敗、退款）與金流端完全同步。
+**我的做法：**
+* **嚴謹驗證：** 每筆 Webhook 請求經過官方簽章驗證，確保訊息由 PayPal 官方發出，防止惡意偽造請求。
+* **防重複處理：** 實作冪等性檢查。在處理訂單狀態變更前，會先比對該事件 ID 與訂單當前狀態。
 
-### 4. 庫存異動與冪等性 (Idempotency) 設計
+**帶來的保障：**
+不依賴前端防止惡意串改、系統異常；冪等性檢查確保即使 PayPal 因為網路波動重複發送了相同的 Webhook 事件，系統也不會觸發重複扣庫存或更新訂單，保證金流與庫存資料絕對精確。
 
-**併發控制 (Concurrency Control)：**
-* **原子操作：** 庫存變動在 **Database Atomic Transaction** 中執行，結帳搭配預扣機制，防止在高併發結帳時發生超賣或負庫存；
-    提供管理者介面進行單一、批量庫存調整，透過 CSV 匯入/匯出功能進行規模數據同步。所有異動皆記錄操作日誌。
 
-**冪等性處理：**
-* **防重複：** 事件處理層會檢查訂單當前狀態，即使 PayPal 重複發送 Webhook，庫存也不會被錯誤地重複扣減或回補，保障資料的絕對一致性。
+### 4. 架構重構：引入 Service Layer 提升可維護性
+**為什麼要重構：**
+原本的開發方式會讓 Model 或 View 變得很肥大，像「庫存預扣」或「購物車金額計算」混在一起，不但難以維護，要寫測試時也發現邏輯太散，很難精準測試。
 
-### 5. 事件導向的非同步通知
+**我的做法：**
+* **模組化設計：** 透過 Service Layer 封裝外部 API（如 PayPal、Shippo）。
+* **獨立業務邏輯：** 實作 `PaypalService` 與 `InventoryService`，將核心邏輯抽離，View 只單純負責資料結構，「怎麼算錢」、「怎麼扣庫存」由專門的 Service 負責。
 
-為了不影響核心交易流程的效能，通知系統採事件導向設計：
+**帶來的改變：**
+* **更容易測試：** 可以針對這些 Service 編寫單元測試，不用再擔心改 A 功能卻壞 B 功能。
+* **依賴解耦：** View 只跟 Service 對接，未來如果公司決定更換 API 服務，只需要修改或新增 Service 實作即可，完全不需要更動到 View 流程，大大降低維護成本。
 
-* **延遲觸發：** 使用 `transaction.on_commit` 確保只有在資料庫資料成功寫入後，才會觸發通知，避免「信寄出了但訂單失敗」的尷尬情況。
-* **職責分離：** 寄信邏輯與核心業務徹底解耦，即使第三方信件服務異常，核心交易功能仍能正常運作。
 
----
+### 5. 安全防禦與風控機制
+**設計考量：**
+電商平台最怕遇到惡意攻擊（如 DDoS）或爬蟲濫用。我除了在程式碼層級做防護，也在網路基礎架構防線。
 
-## 安全與風控
+**我的做法：**
+* **隱藏源站 IP：** 透過 GCP VPC 防火牆設定白名單，僅允許來自 Cloudflare 的流量。能徹底防止攻擊者繞過 CDN 直接攻擊伺服器真實 IP。
+* **流量清洗與過濾：** 整合 Cloudflare WAF 與 Turnstile (驗證碼)，在登入、註冊及客服表單阻擋自動化腳本與惡意 Web 攻擊。
+* **帳號與交易防護：** 實作 Email 驗證機制，確保帳號真實性。
 
-針對電商常見的濫用風險，在重要節點加入防護機制：
-* **源站保護：** 配置 GCP VPC 防火牆白名單，僅接收 Cloudflare 官方 IP 段請求。使所有流量安全過濾，消除攻擊者繞過 CDN 直接存取伺服器真實 IP 的風險。
-* **網路層防護：** 透過 Cloudflare CDN 與 WAF 進行全站加速與流量清洗，有效攔截 Web 攻擊及 DDoS 。
-* **帳號驗證：** 強制 Email 驗證流程。
-* **機器人防禦：** 整合 Cloudflare Turnstile 於登入與註冊、客服表單。
-* **暴力破解防護：** 在結帳等高風險流程實作失敗次數統計、暫時鎖定與限流（Rate limiting）機制。
+**帶來的保障：**
+系統在面對真實網路環境時更具彈性，提升了使用者的帳號安全性，也大幅降低了伺服器被惡意流量灌爆的風險。
 
 ---
 
 ## 技術棧與生產部署
 
 ### 核心技術棧
-* **後端框架：** Django 5.x, Python 3.10+
+* **後端框架：** Django 5.1, Python 3.10+
 * **資料庫：** PostgreSQL（Google Cloud SQL）
-* **非同步任務：** Celery + Redis
-* **第三方API服務：** Google OAuth 2.0、PayPal REST API（含 Webhook 驗證）、Shippo API、SendGrid API
-* **網路及安全：** Cloudflare、Cloudflare Turnstile
+* **記憶體資料庫：** Redis 
+* **非同步任務：** Celery + Redis Broker
+* **第三方API服務：** 
+  * **金流與物流：** PayPal REST API, Shippo API
+  * **驗證與通訊：** Google OAuth 2.0, SendGrid (Email)
+  * **安全防護：** Cloudflare WAF, Turnstile (人機驗證)
 
-### 部署架構
-* **流量入口：** Cloudflare負責 DNS 解析、CDN 全球內容加速，提供 Edge SSL 憑證管理並過濾惡意請求。
-* **安全防禦：** GCP VPC 防火牆實施 IP 白名單機制，僅允許來自 Cloudflare 官方指定網段的 TCP 80/443 請求，徹底隱藏源站並防止繞過攻擊。
-* **應用執行：** Google Cloud Platform VM（Ubuntu） ； 使用 Gunicorn 作為 WSGI Server 處理 Django 邏輯。
-* **HTTPS 反向代理：** Nginx + Let's Encrypt 證書，負責源站端加密通訊與請求分流。
-* **靜態與媒體檔案：** Google Cloud Storage
-* **敏感資訊管理：** 透過環境變數（`.env`）管理敏感資訊，以 `.env.example` 作為設定範例（未納入版本控制）
+### 生產環境架構
+**本專案部署於 Google Cloud Platform (GCP)，並採用標準化生產配置：**
+* **伺服器：** GCP Compute Engine (Ubuntu) 搭配 Gunicorn 作為 WSGI 伺服器。
+* **反向代理：** Nginx 處理靜態資源與 HTTPS (Let's Encrypt) 憑證加密。
+* **雲端儲存：** 靜態檔案與使用者上傳圖片託管於 Google Cloud Storage (GCS)，達成動靜分離。
+* **環境管理：** 透過環境變數（`.env`）管理敏感資訊，並提供`.env.example`供開發者參考。
 
 ---
 
-## 使用說明與聯絡方式
+## 快速開始與聯絡方式
 
-**Live Demo (線上展示):** [https://buyriastore.com](https://buyriastore.com)
-> 本專案為實際上線的作品集，重點在於系統設計與後端實作，並非快速啟動模板。
+**Live Demo:** [https://buyriastore.com](https://buyriastore.com)
+> 本專案為模擬真實營運環境的作品集，重點在於系統設計、後端邏輯與資安防護，並非單純的啟動模板。
 
 ### 本地開發環境需求
-- Python 3.10+
-- Django 5.x
-- PostgreSQL
-- Redis（Celery Broker）
-- 設定 `.env` 環境變數（請參考 `.env.example`）
+本地端環境執行本專案，請安裝以下環境：
+* **環境需求：** Python 3.10+, PostgreSQL, Redis
+* **設定檔：** 請參考 `.env.example` 建立自己的 `.env` 檔案。
+* **Unit Testing：**
+  專案包含 18 項自動化測試案例，包含購物車、庫存管理、郵件服務、客服工單。
 
+* **執行測試：**
+```bash
+# 全域測試
+python manage.py test
 
-如果您對此專案的後台架構、程式碼細節有興趣，**歡迎透過 Email 聯繫。我可以提供後台測試帳號，讓您進一步檢視管理流程與資料結構設計。**
+# 查看特定模組
+python manage.py test cart
+python manage.py test inventory
+```
+
+### 聯絡我
+如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。我可以提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
 
 * **Email:** a02839164@gmail.com
-
-
-For English summary, see README.en.md

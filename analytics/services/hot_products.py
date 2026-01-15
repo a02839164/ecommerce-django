@@ -5,6 +5,7 @@ from payment.models import OrderItem
 from django.db.models import Count, Sum
 from django.core.cache import cache
 
+CACHE_TTL_ANALYTICS = 60 * 60
 
 def get_most_viewed_products(days, limit):
 
@@ -23,7 +24,7 @@ def get_most_viewed_products(days, limit):
         .order_by('-total_views')[:limit]
     )
 
-    cache.set(cache_key, products, 60 * 60 * 24)
+    cache.set(cache_key, products, CACHE_TTL_ANALYTICS)
 
     return products
 
@@ -49,6 +50,6 @@ def get_best_selling_products(days, limit):
     product_ids = [item["product"]for item in qs]
 
     products = list(Product.objects.filter(id__in=product_ids))
-    cache.set(cache_key, products , 60 * 60 * 24)
+    cache.set(cache_key, products , CACHE_TTL_ANALYTICS)
 
     return products

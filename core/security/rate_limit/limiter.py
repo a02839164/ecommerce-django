@@ -1,13 +1,8 @@
 from django.core.cache import cache
 
-
+# 結帳熔斷器（User-based Circuit Breaker）
 class CheckoutRateLimiter:
-    """
-    使用者結帳熔斷器（User-based Circuit Breaker）
-    """
-
-    MAX_FAIL = 5
-    LOCK_SECONDS = 60 * 60  # 60 分鐘
+    MAX_FAIL = 3
 
     @classmethod
     def _get_user_key(cls, user_id):               #產生一個專屬的 cache key 標籤
@@ -30,7 +25,7 @@ class CheckoutRateLimiter:
         """
         key = cls._get_user_key(user_id)                    # 產生使用者cache key標籤
         count = cache.get(key, 0)                           # 用標籤查到專屬cache，找出value 存進變數 count，如果沒有，就預設 0
-        cache.set(key, count + 1, timeout=cls.LOCK_SECONDS) # 設定專屬cache， value +1再寫回去， 60分後如果沒更新，就自動刪掉
+        cache.set(key, count + 1)         # 設定專屬cache， value +1再寫回去， 60分後如果沒更新，就自動刪掉
 
     @classmethod
     def clear(cls, user_id):

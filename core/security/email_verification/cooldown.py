@@ -3,8 +3,6 @@ from django.core.cache import cache
 import hashlib
 
 
-COOLDOWN_SECONDS = 60 * 30  # 30 分鐘
-
 def _generate_key(identifier, action: str) -> str:
     """
     內建私有函數：
@@ -28,6 +26,4 @@ def is_cooldown(identifier, action: str):
 def mark_sent(identifier, action: str):
     key = _generate_key(identifier, action)
 
-    timeout = COOLDOWN_SECONDS
-        
-    cache.set(key, True, timeout=timeout)
+    cache.set(key, True)
