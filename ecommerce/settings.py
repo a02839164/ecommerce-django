@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from google.oauth2 import service_account
 import environ
-
 # Django environ setup
 
 
@@ -32,9 +31,9 @@ SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = env("DEBUG")
+DEBUG = env.bool("DEBUG", default=False)
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
 
@@ -184,15 +183,13 @@ SENDGRID_ECHO_TO_STDOUT = False
 # (Database) configuration settings:
 
 DATABASES = {
-
-    'default':{
-    
-        'ENGINE' : 'django.db.backends.postgresql',
-        'NAME' : env("DB_NAME"),
-        'USER' : env("DB_USER"),
-        'PASSWORD' : env("DB_PASSWORD"),
-        'HOST' : env("DB_HOST"),
-        'PORT' : '5432', 
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('POSTGRES_NAME'),
+        'USER': env('POSTGRES_USER'),
+        'PASSWORD': env('POSTGRES_PASSWORD'),
+        'HOST': env('POSTGRES_HOST'),
+        'PORT': env('POSTGRES_PORT'),
     }
 }
 
@@ -272,13 +269,14 @@ TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverif
 
 
 
-CELERY_BROKER_URL = "redis://127.0.0.1:6379/0"
-CELERY_RESULT_BACKEND = "redis://127.0.0.1:6379/1"
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/1"
 
 CELERY_TASK_RESULT_EXPIRES = 3600 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Taipei'
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "sessions"
@@ -286,7 +284,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/2",
+        "LOCATION": "redis://redis:6379/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -295,7 +293,7 @@ CACHES = {
     },
     "sessions": {                                           # 專門給登入 Session 和購物車用
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/3", 
+        "LOCATION": "redis://redis:6379/3", 
         "TIMEOUT": 604800,                                  # 預設 7 天
         "KEY_PREFIX": "buyria_sess"
     }

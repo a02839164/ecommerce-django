@@ -30,3 +30,8 @@ env/
 Thumbs.db
 
 *.json
+
+# SQL
+postgres/
+*.sql
+*.dump
