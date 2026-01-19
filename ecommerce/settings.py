@@ -37,7 +37,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['localhost', '127.0.0.1'])
 
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS')
 
-SITE_DOMAIN = env("SITE_DOMAIN",default="http://127.0.0.1:8000")# 預設給 local 用
+SITE_DOMAIN = env("SITE_DOMAIN",default="http://127.0.0.1:8000")
 
 # Application definition
 
@@ -71,7 +71,6 @@ INSTALLED_APPS = [
     'sendgrid_backend', # email
 ]
 
-# CRISPY_TEMPLATE_PACK = 'bootstrap5'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
@@ -153,7 +152,7 @@ STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [BASE_DIR/'static']
 
-STATIC_ROOT = BASE_DIR / 'staticfiles'       # 先使用本地 ，等之後反向代理再上線 + urls.py urlpatterns += static
+STATIC_ROOT = BASE_DIR / 'staticfiles'       
 
 MEDIA_ROOT = BASE_DIR / "media"   #保留 本地暫存／上傳來源
 

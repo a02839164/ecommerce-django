@@ -11,9 +11,9 @@
 
 ## 概述
 
-「這是我為了模擬真實電商營運環境所開發的專案。除了基礎功能，花了些心思在處理『庫存超賣』、『金流異步回傳』以及『系統架構重構』等實際開發中會遇到的難題。」
+「這是我模擬真實電商營運環境所開發的專案。除了基礎功能，花了些心思在處理『庫存超賣』、『金流異步回傳』以及『系統架構重構』等實際開發中會遇到的難題。」
 
-開發過程中，特別著重於以下挑戰：
+開發過程中，特別著重以下挑戰：
 * **確保資料一致性：** 處理交易與金流 Webhook 的同步，保證訂單狀態絕對準確。
 * **高併發下的庫存控制：** 透過資料庫事務 (Transaction) 與預扣機制，預防搶購時發生超賣問題。
 * **系統的長期維護性：** 實作 Service Layer 模式來封裝商業邏輯，避免代碼變得臃腫難以維護。
@@ -85,14 +85,15 @@
 ## 技術棧與佈署
 
 ### 核心技術棧
-* **後端框架：** Django 5.1, Python 3.10+
+* **後端框架：** Django 5.2.6, Python 3.10+
 * **資料庫：** PostgreSQL（Google Cloud SQL）
 * **記憶體資料庫：** Redis 
 * **非同步任務：** Celery + Redis Broker
+* **容器化技術：** Docker & Docker Compose
 * **第三方API服務：** 
   * **金流與物流：** PayPal REST API, Shippo API
   * **驗證與通訊：** Google OAuth 2.0, SendGrid (Email)
-  * **安全防護：** Cloudflare WAF, Turnstile (人機驗證)
+  * **安全防護：** Cloudflare WAF, Turnstile
 
 ### 生產環境架構
 **本專案部署於 Google Cloud Platform (GCP)，並採用標準化生產配置：**
@@ -103,29 +104,22 @@
 
 ---
 
-## 快速開始、聯絡方式
-
-**Live Demo:** [https://buyriastore.com](https://buyriastore.com)
-> 本專案為模擬真實營運環境的作品集，重點在於系統設計、後端邏輯與資安防護，並非單純的啟動模板。
-
-### 本地環境
-本地端環境執行本專案，請安裝以下環境：
-* **環境需求：** Python 3.10+, PostgreSQL, Redis
-* **設定檔：** 請參考 `.env.example` 建立自己的 `.env` 檔案。
-* **Unit Testing：**
-  專案包含 18 項自動化測試案例，包含購物車、庫存管理、郵件服務、客服工單。
-
-* **執行測試：**
+## Quick Start
+### Docker 快速啟動
+專案整合 Django、PostgreSQL、Redis 及 Celery，一行指令即可完成建置。
+* **環境配置：** 參考 `.env.example` 建立 `.env` 檔案。
+* **啟動指令：** 
 ```bash
-# 全域測試
-python manage.py test
-
-# 查看特定模組
-python manage.py test cart
-python manage.py test inventory
+docker-compose up --build -d
 ```
-
+### Unit Testing
+專案包含 18 項自動化測試案例，包含購物車、庫存管理、郵件服務、客服工單。
+```bash
+# 全域測試 (亦可針對特定模組進行測試；如: cart, inventory)
+docker exec -it buyria_web python manage.py test
+```
+## 聯絡方式
 ### 聯絡我
-如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。我可以提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
+如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。可提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
 
 * **Email:** a02839164@gmail.com
