@@ -41,6 +41,7 @@ services:
     command: sh run_web.sh
 
   celery_worker:
+    build: .
     image: buyria_app:latest
     container_name: buyria_worker
     restart: always
@@ -60,6 +61,7 @@ services:
       - redis
 
   celery_beat:
+    build: .
     image: buyria_app:latest
     container_name: buyria_beat
     restart: always
