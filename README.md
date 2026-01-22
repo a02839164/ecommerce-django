@@ -116,11 +116,29 @@ docker-compose up --build -d
 ### Unit Testing
 專案包含 18 項自動化測試案例，包含購物車、庫存管理、郵件服務、客服工單。
 ```bash
-# 全域測試 (亦可針對特定模組進行測試；如: cart, inventory)
+# 全域測試 (可針對特定模組進行測試；如: cart, inventory)
 docker exec -it buyria_web python manage.py test
 ```
+
+### 資料庫維護
+專案提供自動化腳本，用於 Docker 環境下的 PostgreSQL 備份與還原。
+#### 1.賦予執行權限
+在執行腳本前，請先確保腳本具備執行權限：
+```bash
+chmod +x local_backup.sh local_restore.sh
+```
+#### 2.備份
+讀取 .env 配置，產生壓縮備份檔於 ./db_backups/
+```bash
+./local_backup.sh
+```
+#### 3.還原
+執行後可從清單中選擇備份檔進行還原。注意：執行將會重置現有資料庫
+```bash
+./local_restore.sh
+```
+
 ## 聯絡方式
-### 聯絡我
 如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。可提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
 
 * **Email:** a02839164@gmail.com
