@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from analytics.services.views_tracker import track_product_view
 from analytics.services.hot_products import get_most_viewed_products, get_best_selling_products
 from analytics.services.recent_product import get_recent_products
+from django.db import connection
 
 def store(request):
 
@@ -25,8 +26,16 @@ def store(request):
 
 def list_category(request, category_slug):
     category = get_object_or_404(Category,slug = category_slug)
-    products = Product.objects.filter(category=category, is_fake=False)
-    context = {'category':category ,'products':products}
+    products_list = Product.objects.filter(
+        category=category, 
+        is_fake=False
+    ).only('title', 'price', 'slug', 'thumbnail').order_by('-id')
+
+    paginator = Paginator(products_list, 12)
+    page_number = request.GET.get('page')
+    products = paginator.get_page(page_number)
+    context = {'category': category, 'products': products}
+
 
     return render(request, 'store/list-category.html', context) 
 
@@ -42,38 +51,77 @@ def product_info(request, product_slug):
 
 
 def product_search(request):
-                                                     # 取得搜尋模板裡的name=
-    query = request.GET.get('q', '').strip()         # q裡面的value，預設空白，  .strip() 去掉前後空白    -base.html
-    category_id = request.GET.get('category', '')    # category 裡面的value，預設空白                    -base.html
-    sort_by = request.GET.get('sort', 'relevance')   # sort 裡面的value，預設「相似度」                  -product-search.html
-    results = Product.objects.only("id", "title", "price", "slug", "thumbnail", "category_id")
+    query = request.GET.get('q', '').strip()
+    category_id = request.GET.get('category', '')
+    sort_by = request.GET.get('sort', 'relevance') # 取得排序參數
+    try:
+        page = int(request.GET.get('page', 1))
+        if page < 1: page = 1
+    except (ValueError, TypeError):
+        page = 1
+    offset = (page - 1) * 18
 
-    # 搜尋條件 .filter() 累積條件
     if query:
-        results = results.filter(
-            Q(title__icontains=query) |
-            Q(brand__icontains=query)
-        )
+        if sort_by == "price_low":
+            order_sql = "ORDER BY price ASC, id DESC"
+        elif sort_by == "price_high":
+            order_sql = "ORDER BY price DESC, id DESC"
+        else:
+            order_sql = "ORDER BY id DESC"  
 
-    if category_id:
-        results = results.filter(category_id=category_id)
+        # 組合完整 SQL
+        sql = f"""
+            SELECT id FROM store_product 
+            WHERE (title ILIKE %s OR brand ILIKE %s)
+        """
+        params = [f'%{query}%', f'%{query}%']
 
-    # 排序
-    if sort_by == "price_low":
-        results = results.order_by("price", "id")   # 升序
-    elif sort_by == "price_high":
-        results = results.order_by("-price", "-id") # 降序
+        if category_id:
+            sql += " AND category_id = %s"
+            params.append(category_id)
+
+        # 加上動態排序與分頁
+        sql += f" {order_sql} LIMIT 18 OFFSET %s"
+        params.append(offset)
+
+        with connection.cursor() as cursor:
+            cursor.execute(sql, params)
+            ids = [row[0] for row in cursor.fetchall()]
+
+        if not ids:
+            page_obj = None
+        else:
+            # 3. 拿到 ID 後，這裏的排序也要跟 SQL 保持一致，否則順序會亂掉
+            results = Product.objects.filter(id__in=ids)
+            if sort_by == "price_low":
+                results = results.order_by("price", "id")
+            elif sort_by == "price_high":
+                results = results.order_by("-price", "-id")
+            else:
+                results = results.order_by("-id")
+
+            class MockPage:
+                def __init__(self, items, number):
+                    self.object_list = items
+                    self.number = number
+                    class MockPaginator:
+                        num_pages = 100 
+                        count = 1800
+                    self.paginator = MockPaginator()
+                def __iter__(self): return iter(self.object_list)
+                def has_next(self): return len(self.object_list) == 18
+                def has_previous(self): return self.number > 1
+                def next_page_number(self): return self.number + 1
+                def previous_page_number(self): return self.number - 1
+
+            page_obj = MockPage(list(results), page)
     else:
-        results = results.order_by("id")            # relevance = id 預設順序
-
-    # 限制最多結果（加速）
-    MAX_RESULTS = 1000
-    results = results[:MAX_RESULTS]                 # SQL LIMIT 1000
-
-    # 分頁
-    paginator = Paginator(results, 18)
-    page_number = request.GET.get("page")
-    page_obj = paginator.get_page(page_number)
+        # 沒搜尋時走正常分頁
+        results = Product.objects.all().order_by("-id")
+        if category_id:
+            results = results.filter(category_id=category_id)
+        paginator = Paginator(results, 18)
+        page_obj = paginator.get_page(page)
 
     context = {
         "query": query,
@@ -82,5 +130,4 @@ def product_search(request):
         "categories": Category.objects.all(),
         "sort_by": sort_by,
     }
-
     return render(request, "store/product-search.html", context)

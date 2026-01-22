@@ -2,6 +2,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
 import uuid
+from django.contrib.postgres.indexes import GinIndex
+
 class Category(models.Model):
     name = models.CharField(max_length=250 , db_index=True)
     slug = models.SlugField(max_length=250, unique=True)
@@ -50,8 +52,20 @@ class Product(models.Model):
         verbose_name_plural = 'products' 
 
         indexes = [
+            models.Index(fields=['category', 'is_fake','price']),
             models.Index(fields=['title']),
-            models.Index(fields=['category', 'price']),
+
+            GinIndex(
+                fields=['title'], 
+                name='product_title_trgm_idx', 
+                opclasses=['gin_trgm_ops']
+            ),
+            
+            GinIndex(
+                fields=['brand'], 
+                name='product_brand_trgm_idx', 
+                opclasses=['gin_trgm_ops']
+            ),
         ]
 
     def __str__(self):

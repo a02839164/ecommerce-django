@@ -47,6 +47,51 @@
               </div>
             {% endfor %}
           </div>
+          {% if products.has_other_pages %}
+              <nav aria-label="Page navigation">
+                  <ul class="pagination justify-content-center mt-4 flex-wrap gap-2" style="list-style: none; padding: 0;">
+                      
+                      {# 上一頁 #}
+                      {% if products.has_previous %}
+                          <li>
+                              <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                                href="?page={{ products.previous_page_number }}">
+                                  ← Prev
+                              </a>
+                          </li>
+                      {% endif %}
+
+                      {# 頁碼數字：顯示當前頁面基準的前後 5 頁 #}
+                      {% with start_page=products.number|add:"-5" end_page=products.number|add:"5" %}
+                          {% for num in products.paginator.page_range %}
+                              {% if num >= start_page and num <= end_page %}
+                                  {% if products.number == num %}
+                                      <li>
+                                          <span class="btn btn-primary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm">{{ num }}</span>
+                                      </li>
+                                  {% else %}
+                                      <li>
+                                          <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                                            href="?page={{ num }}">{{ num }}</a>
+                                      </li>
+                                  {% endif %}
+                              {% endif %}
+                          {% endfor %}
+                      {% endwith %}
+
+                      {# 下一頁 #}
+                      {% if products.has_next %}
+                          <li>
+                              <a class="btn btn-outline-secondary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm"
+                                href="?page={{ products.next_page_number }}">
+                                  Next →
+                              </a>
+                          </li>
+                      {% endif %}
+
+                  </ul>
+              </nav>
+          {% endif %}
         </div>
     </div>
   </div>
