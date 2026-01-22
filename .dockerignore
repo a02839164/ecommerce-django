@@ -23,7 +23,6 @@ db.sqlite3
 *.swp
 
 # Database & Large Data
-postgres/
 *.sql
 *.dump
 
@@ -33,3 +32,6 @@ media/
 
 # Sensitive Credentials
 *.json
+
+# backups
+db_backups/

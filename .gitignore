@@ -32,6 +32,9 @@ Thumbs.db
 *.json
 
 # SQL
-postgres/
 *.sql
 *.dump
+
+# backups
+db_backups/*
+!db_backups/.gitkeep
