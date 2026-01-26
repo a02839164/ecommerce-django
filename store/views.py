@@ -1,11 +1,26 @@
 from django.shortcuts import render,get_object_or_404
 from . models import Category , Product
-from django.db.models import Q
 from django.core.paginator import Paginator
 from analytics.services.views_tracker import track_product_view
 from analytics.services.hot_products import get_most_viewed_products, get_best_selling_products
 from analytics.services.recent_product import get_recent_products
 from django.db import connection
+import math
+
+class MockPage:
+    def __init__(self, items, number, total, limit):
+        self.object_list = items
+        self.number = number
+        self.total_count = total
+        self.num_pages = math.ceil(total / limit) if total > 0 else 1
+        self.page_range = range(1, self.num_pages + 1)
+    def __iter__(self): return iter(self.object_list)
+    def has_other_pages(self): return self.num_pages > 1
+    def has_next(self): return self.number < self.num_pages
+    def has_previous(self): return self.number > 1
+    def next_page_number(self): return self.number + 1
+    def previous_page_number(self): return self.number - 1
+
 
 def store(request):
 
@@ -62,30 +77,33 @@ def product_search(request):
     offset = (page - 1) * 18
 
     if query:
+
+        search_filter = "WHERE (title ILIKE %s OR brand ILIKE %s)"
+        params = [f'%{query}%', f'%{query}%']
+
+        if category_id:
+            search_filter += " AND category_id = %s"
+            params.append(category_id)
+
+        count_sql = f"SELECT COUNT(*) FROM store_product {search_filter}"
+
+        with connection.cursor() as cursor:
+            cursor.execute(count_sql, params)
+            total_count = cursor.fetchone()[0]
+
+
         if sort_by == "price_low":
             order_sql = "ORDER BY price ASC, id DESC"
         elif sort_by == "price_high":
             order_sql = "ORDER BY price DESC, id DESC"
         else:
             order_sql = "ORDER BY id DESC"  
-
-        # 組合完整 SQL
-        sql = f"""
-            SELECT id FROM store_product 
-            WHERE (title ILIKE %s OR brand ILIKE %s)
-        """
-        params = [f'%{query}%', f'%{query}%']
-
-        if category_id:
-            sql += " AND category_id = %s"
-            params.append(category_id)
-
-        # 加上動態排序與分頁
-        sql += f" {order_sql} LIMIT 18 OFFSET %s"
-        params.append(offset)
+            
+        paged_params = params + [offset]
+        paged_sql = f"SELECT id FROM store_product {search_filter} {order_sql} LIMIT 18 OFFSET %s"
 
         with connection.cursor() as cursor:
-            cursor.execute(sql, params)
+            cursor.execute(paged_sql, paged_params)
             ids = [row[0] for row in cursor.fetchall()]
 
         if not ids:
@@ -100,28 +118,23 @@ def product_search(request):
             else:
                 results = results.order_by("-id")
 
-            class MockPage:
-                def __init__(self, items, number):
-                    self.object_list = items
-                    self.number = number
-                    class MockPaginator:
-                        num_pages = 100 
-                        count = 1800
-                    self.paginator = MockPaginator()
-                def __iter__(self): return iter(self.object_list)
-                def has_next(self): return len(self.object_list) == 18
-                def has_previous(self): return self.number > 1
-                def next_page_number(self): return self.number + 1
-                def previous_page_number(self): return self.number - 1
-
-            page_obj = MockPage(list(results), page)
+            page_obj = MockPage(list(results), page, total_count, 18)
     else:
         # 沒搜尋時走正常分頁
         results = Product.objects.all().order_by("-id")
         if category_id:
             results = results.filter(category_id=category_id)
-        paginator = Paginator(results, 18)
-        page_obj = paginator.get_page(page)
+
+        if sort_by == 'price_low':
+            results = results.order_by('price')
+        elif sort_by == 'price_high':
+            results = results.order_by('-price')
+        else:
+            results = results.order_by('-id')
+
+        total_count = results.count()
+        paged_results = results[offset : offset + 18].select_related('category')
+        page_obj = MockPage(list(paged_results), page, total_count, 18)
 
     context = {
         "query": query,

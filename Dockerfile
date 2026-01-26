@@ -6,7 +6,6 @@ ENV TZ=Asia/Taipei
 
 RUN apt-get update && apt-get install -y \
     postgresql-client \
-    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /code
