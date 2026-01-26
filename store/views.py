@@ -13,7 +13,9 @@ class MockPage:
         self.number = number
         self.total_count = total
         self.num_pages = math.ceil(total / limit) if total > 0 else 1
-        self.page_range = range(1, self.num_pages + 1)
+        start = max(1, self.number - 5)
+        end = min(self.num_pages, self.number + 5)
+        self.page_range = range(start, end + 1)
     def __iter__(self): return iter(self.object_list)
     def has_other_pages(self): return self.num_pages > 1
     def has_next(self): return self.number < self.num_pages

@@ -85,11 +85,8 @@
                             </a>
                         </li>
                     {% endif %}
-
-                    {% with start_page=page_obj.number|add:"-5" end_page=page_obj.number|add:"5" %}
                         {% for num in page_obj.page_range %}
-                            {% if num >= start_page and num <= end_page %}
-                                {% if page_obj.number == num %}
+                            {% if page_obj.number == num %}
                                     <li>
                                         <span class="btn btn-primary btn-md rounded-pill px-3 py-1 fw-semibold shadow-sm">{{ num }}</span>
                                     </li>
@@ -99,9 +96,7 @@
                                         href="?q={{ query }}&category={{ selected_category }}&sort={{ sort_by }}&page={{ num }}">{{ num }}</a>
                                     </li>
                                 {% endif %}
-                            {% endif %}
                         {% endfor %}
-                    {% endwith %}
 
                     {% if page_obj.has_next %}
                         <li>
