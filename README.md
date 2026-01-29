@@ -142,3 +142,5 @@ chmod +x local_backup.sh local_restore.sh
 如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。可提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
 
 * **Email:** a02839164@gmail.com
+
+## 專案進度：2026-01-29 分支測試
