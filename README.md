@@ -143,4 +143,3 @@ chmod +x local_backup.sh local_restore.sh
 
 * **Email:** a02839164@gmail.com
 
-## 專案進度：2026-01-29 分支測試
