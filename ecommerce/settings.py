@@ -280,7 +280,7 @@ CELERY_TIMEZONE = 'Asia/Taipei'
 CELERY_BEAT_SCHEDULE = {
     'daily-database-backup': {
         'task': 'core.maintenance.tasks.auto_db_backup',
-        'schedule': crontab(hour=23, minute=45),
+        'schedule': crontab(hour=3, minute=00),
     },
 }
 
