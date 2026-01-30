@@ -13,7 +13,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # 掃描所有 INSTALLED_APPS，找 app 裡的 tasks.py自動註冊任務
 app.autodiscover_tasks()
-
+app.autodiscover_tasks(['core.maintenance'])
 
 @app.task(bind=True)
 def debug_task(self):
