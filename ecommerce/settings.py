@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 from google.oauth2 import service_account
 import environ
+from celery.schedules import crontab
 # Django environ setup
 
 
@@ -276,6 +277,12 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Taipei'
+CELERY_BEAT_SCHEDULE = {
+    'daily-database-backup': {
+        'task': 'core.maintenance.tasks.auto_db_backup',
+        'schedule': crontab(hour=23, minute=45),
+    },
+}
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "sessions"
