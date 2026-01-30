@@ -5,6 +5,7 @@
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge)](https://www.python.org/)
 [![Django](https://img.shields.io/badge/Django-5.x-blue?style=for-the-badge)](https://www.djangoproject.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Cloud_SQL-blue?style=for-the-badge)](https://www.postgresql.org/)
+[![Docker](https://img.shields.io/badge/Docker-Containerized-blue?style=for-the-badge&logo=docker)](https://www.docker.com/)
 [![Redis](https://img.shields.io/badge/Redis-Session_%26_Cache-red?style=for-the-badge)](https://redis.io/)
 [![Cloudflare](https://img.shields.io/badge/Cloudflare-DNS_%26_CDN-orange?style=for-the-badge)](https://www.cloudflare.com/)
 [![GCP](https://img.shields.io/badge/GCP-Compute_Engine-blue?style=for-the-badge)](https://cloud.google.com/)
@@ -35,7 +36,17 @@
   在壓力測試中，模糊搜尋從「明顯卡頓」變成秒開(2.6秒降至30毫秒)，效能提升**80倍**，解決搜尋延遲問題
 
 
-### 2. Redis 實務應用 & 配置
+### 2. Docker 容器化與服務編排
+**為什麼使用 Docker：** 
+確保開發環境、Python 版本、套件及系統相依性完全一致，不因環境配置錯誤導致的部署失敗。利用 Docker 內建虛擬網路容器間通訊，透過 docker-compose 實作一鍵自動化啟動並串接所有服務，大幅降低手動配置伺服器的繁瑣流程與人為出錯率。
+
+**我的做法：**
+* **多服務架構編排：** 整合 Django、PostgreSQL、Redis 及 Celery 於獨立容器中運作，達成環境隔離與快速水平擴展。
+* **容器內溝通實務：** 利用 Docker 內建虛擬網路實作容器間通訊
+* **應用案例（自動化備份**
+利用 Celery 容器定期觸發 Shell 腳本備份資料庫，跨容器連線至資料庫執行 pg_dump 並進行 gzip 流式壓縮。
+
+### 3. Redis 實務應用 & 配置
 **為什麼使用 Redis：** 
 為了提升系統回應速度，引入 Redis 作為記憶體資料庫。將原本放在資料庫或檔案系統的 Session 與常用資料快取 Cache 移至 Redis，大幅減少磁碟 I/O，讓系統在高流量下保持低延遲。但如果 Redis 沒有分別配置，會導致 Session 與 Cache 功能錯亂混淆(如:線上的使用者被強制登出)。
 
@@ -44,7 +55,7 @@
 * **帶來的價值：**使用 Redis 與配置確保穩定性。不僅可以放心執行快取維護或清理，不會影響到使用者的登入狀態，更符合真實環境的運作標準。
 
 
-### 3. 金流 Webhook 與狀態一致性
+### 4. 金流 Webhook 與狀態一致性
 **設計初衷：**
 串接金流選擇將 PayPal Webhook 異步回傳視為系統狀態更新的最終可信來源，規避網路環境影響或人為竄改的風險。
 
@@ -56,22 +67,9 @@
   不依賴前端防止惡意串改、系統異常；冪等性檢查確保即使 PayPal 因為網路波動重複發送了相同的 Webhook 事件，系統也不會觸發重複扣庫存或更新訂單，保證金流與庫存資料絕對精確。
 
 
-### 4. 架構重構：引入 Service Layer
-**為什麼要重構：**
-原本的開發方式會讓 Model 或 View 變得很肥大，像「庫存預扣」或「購物車金額計算」混在一起，不但難以維護，要寫測試時也發現邏輯太散，很難精準測試。
-
-**我的做法：**
-* **模組化設計：** 透過 Service Layer 封裝外部 API（如 PayPal、Shippo）。
-* **獨立業務邏輯：** 實作 `PaypalService` 與 `InventoryService`，將核心邏輯抽離，View 只單純負責資料結構，「怎麼算錢」、「怎麼扣庫存」由專門的 Service 負責。
-
-**帶來的改變：**
-* **更容易測試：** 可以針對這些 Service 編寫單元測試，不用再擔心改 A 功能卻壞 B 功能。
-* **依賴解耦：** View 只跟 Service 對接，未來如果公司決定更換 API 服務，只需要修改或新增 Service 實作即可，完全不需要更動到 View 流程，大大降低維護成本。
-
-
 ### 5. 安全防禦、風控
 **設計考量：**
-電商平台最怕遇到惡意攻擊（如 DDoS）或爬蟲濫用。我除了在程式碼層級做防護，也在網路基礎架構防線。
+電商平台最怕遇到惡意攻擊（如 DDoS）。我除了在程式碼層級做防護，也在網路基礎架構防線。
 
 **我的做法：**
 * **隱藏源站 IP：** 透過 GCP VPC 防火牆設定白名單，僅允許來自 Cloudflare 的流量。能徹底防止攻擊者繞過 CDN 直接攻擊伺服器真實 IP。
@@ -87,7 +85,7 @@
 
 ### 核心技術棧
 * **後端框架：** Django 5.2.6, Python 3.10+
-* **資料庫：** PostgreSQL（Google Cloud SQL）
+* **資料庫：** PostgreSQL
 * **記憶體資料庫：** Redis 
 * **非同步任務：** Celery + Redis Broker
 * **容器化技術：** Docker & Docker Compose
@@ -107,7 +105,6 @@
 
 ## Quick Start
 ### Docker 快速啟動
-專案整合 Django、PostgreSQL、Redis 及 Celery，一行指令即可完成建置。
 * **環境配置：** 參考 `.env.example` 建立 `.env` 檔案。
 * **啟動指令：** 
 ```bash
@@ -121,19 +118,11 @@ docker exec -it buyria_web python manage.py test
 ```
 
 ### 資料庫維護
-專案提供自動化腳本，用於 Docker 環境下的 PostgreSQL 備份與還原。
-#### 1.賦予執行權限
-在執行腳本前，請先確保腳本具備執行權限：
-```bash
-chmod +x local_backup.sh local_restore.sh
-```
-#### 2.備份
-讀取 .env 配置，產生壓縮備份檔於 ./db_backups/
-```bash
-./local_backup.sh
-```
-#### 3.還原
-執行後可從清單中選擇備份檔進行還原。注意：執行將會重置現有資料庫
+#### 1.備份
+系統整合 Celery Beat，每日 03:00 自動執行 `local_backup.sh` 並將壓縮檔存至 `./db_backups/`。
+
+#### 2.還原
+執行後可從清單中選擇備份檔進行手動還原。注意：執行將會重置現有資料庫
 ```bash
 ./local_restore.sh
 ```
