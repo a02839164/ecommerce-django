@@ -12,6 +12,7 @@ services:
   redis:
     image: redis:latest
     container_name: buyria_redis
+    command: ${REDIS_COMMAND:-redis-server}
     ports:
       - "6379:6379"
     volumes:
@@ -25,11 +26,9 @@ services:
       - .env
     volumes:
       - .:/code  
+      - ./staticfiles:/code/staticfiles
     ports:
       - "8000:8000"
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONUNBUFFERED=1
     depends_on:
       - db
       - redis
@@ -44,9 +43,6 @@ services:
       - .env
     volumes:
       - .:/code
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONUNBUFFERED=1
     command: celery -A ecommerce worker --loglevel=info
     depends_on:
       - db
@@ -61,9 +57,6 @@ services:
       - .env
     volumes:
       - .:/code
-    environment:
-      - REDIS_URL=redis://redis:6379/0
-      - PYTHONUNBUFFERED=1
     command: celery -A ecommerce beat -s /tmp/celerybeat-schedule
     depends_on:
       - redis

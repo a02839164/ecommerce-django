@@ -268,9 +268,10 @@ TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverif
 
 
 
+REDIS_BASE_URL = env('REDIS_URL')
 
-CELERY_BROKER_URL = "redis://redis:6379/0"
-CELERY_RESULT_BACKEND = "redis://redis:6379/1"
+CELERY_BROKER_URL = f"{REDIS_BASE_URL}/0"
+CELERY_RESULT_BACKEND = f"{REDIS_BASE_URL}/1"
 
 CELERY_TASK_RESULT_EXPIRES = 3600 
 CELERY_ACCEPT_CONTENT = ['json']
@@ -290,7 +291,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/2",
+        "LOCATION": f"{REDIS_BASE_URL}/2",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -299,7 +300,7 @@ CACHES = {
     },
     "sessions": {                                           # 專門給登入 Session 和購物車用
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/3", 
+        "LOCATION": f"{REDIS_BASE_URL}/3", 
         "TIMEOUT": 604800,                                  # 預設 7 天
         "KEY_PREFIX": "buyria_sess"
     }
