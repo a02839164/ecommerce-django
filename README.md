@@ -36,13 +36,14 @@
 
 
 ### 2. Docker 容器化與服務編排
-確保開發環境、Python 版本、套件及系統相依性完全一致，不因環境配置錯誤導致的部署失敗。利用 Docker 內建虛擬網路容器間通訊，透過 docker-compose 實作一鍵自動化啟動並串接所有服務，大幅降低手動配置伺服器的繁瑣流程與人為出錯率。
+透過 Docker 與 docker-compose 統一開發與執行環境，Python版本、套件與系統相依性一致，避免因環境差異導致的部署問題，一鍵指令完成所有服務的啟動與串接。
 
 **我的做法：**
-* **多服務架構編排：** 整合 Django、PostgreSQL、Redis 及 Celery 於獨立容器中運作，達成環境隔離與快速水平擴展。
-* **容器內溝通實務：** 利用 Docker 內建虛擬網路實作容器間通訊
-* **應用案例（自動化備份**
-利用 Celery 容器定期觸發 Shell 腳本備份資料庫，跨容器連線至資料庫執行 pg_dump 並進行 gzip 流式壓縮。
+* **多服務架構編排：** 使用 docker-compose 整合 Django、PostgreSQL、Redis 與 Celery 於獨立容器中運作，實現環境隔離，利於未來水平擴展。
+* **多階段建置優化：** Python image 換成 Slim ，搭配 multi-stage build，把 build-time 依賴和 runtime 拆開，在實測環境下將 Docker image 體積減少約 70～75%（約由 2GB 降至 486MB），並降低執行環境的攻擊面。
+* **容器內溝通實務：** 使用 service name 作為主機名稱進行跨容器通訊，避免硬編碼 IP。
+* **應用案例-自動化備份：**利用 Celery 容器定期執行腳本，跨容器連線至資料庫執行 `pg_dump` 使用 `gzip` 進行壓縮備份。
+
 
 ### 3. Redis 實務應用 & 配置
 為了提升系統回應速度，引入 Redis 作為記憶體資料庫。將原本放在資料庫或檔案系統的 Session 與常用資料快取 Cache 移至 Redis，減少磁碟 I/O，讓系統在高流量下保持低延遲。

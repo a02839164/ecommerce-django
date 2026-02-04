@@ -10,7 +10,7 @@ services:
       - "7432:5432"
 
   redis:
-    image: redis:latest
+    image: redis:7-alpine
     container_name: buyria_redis
     command: ${REDIS_COMMAND:-redis-server}
     ports:
