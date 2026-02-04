@@ -57,7 +57,7 @@ def list_category(request, category_slug):
 
     return render(request, 'store/list-category.html', context) 
 
-@cache_page(settings.CACHE_TTL_HOME, key_prefix="product_detail")
+
 def product_info(request, product_slug):
     product = get_object_or_404(Product, slug=product_slug, is_fake=False )
 
