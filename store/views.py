@@ -26,7 +26,6 @@ class MockPage:
     def next_page_number(self): return self.number + 1
     def previous_page_number(self): return self.number - 1
 
-@cache_page(settings.CACHE_TTL_HOME, key_prefix="home_page")
 def store(request):
 
     all_product = Product.objects.filter(is_fake=False)
@@ -43,7 +42,6 @@ def store(request):
     
     return render(request, 'store/store.html', context)
 
-@cache_page(settings.CACHE_TTL_CATEGORY, key_prefix="category_page")
 def list_category(request, category_slug):
     category = get_object_or_404(Category,slug = category_slug)
     products_list = Product.objects.filter(
