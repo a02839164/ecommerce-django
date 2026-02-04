@@ -1,5 +1,5 @@
 import json
-from django.core.cache import cache
+from django.core.cache import caches
 from django_redis import get_redis_connection
 
 def get_client_ip(request):
@@ -24,16 +24,17 @@ def get_client_ip(request):
 
 def track_product_view(request, product):
 
+    if not request.session.session_key:
+            request.session.create()
+
     ip_address = get_client_ip(request)
     session_id = request.session.session_key
-    if not session_id:
-        return
-
+    session_cache = caches['sessions']
     # 防重複計數鎖：60 秒內同個 Session 看同個商品不重複計入 Redis 緩衝
     prevent_key = f"view_prevent:{product.id}:{session_id}"
-    if cache.get(prevent_key):
+    if session_cache.get(prevent_key):
         return
-    cache.set(prevent_key, True, timeout=60)
+    session_cache.set(prevent_key, True, timeout=60)
 
     # 準備寫入資料庫所需的資料
     view_data = {
