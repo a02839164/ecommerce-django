@@ -283,11 +283,18 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'core.maintenance.tasks.auto_db_backup',
         'schedule': crontab(hour=3, minute=00),
     },
+    'sync-product-views-every-15-mins': {
+        'task': 'analytics.tasks.batch_sync_product_views',
+        'schedule': crontab(minute='*/5'),      #5分鐘執行一次
+    },
 }
+CACHE_TTL_HOME = 60 * 15  # 首頁快取 15 分鐘
+CACHE_TTL_CATEGORY = 60 * 10  # 分類頁快取 10 分鐘
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "sessions"
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -295,7 +302,7 @@ CACHES = {
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
-        "TIMEOUT": 60 * 10,
+        "TIMEOUT": 60 * 60,
         "KEY_PREFIX": "buyria"
     },
     "sessions": {                                           # 專門給登入 Session 和購物車用

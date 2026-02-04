@@ -1,11 +1,14 @@
 from django.shortcuts import render,get_object_or_404
-from . models import Category , Product
+from .models import Category , Product
 from django.core.paginator import Paginator
 from analytics.services.views_tracker import track_product_view
 from analytics.services.hot_products import get_most_viewed_products, get_best_selling_products
 from analytics.services.recent_product import get_recent_products
 from django.db import connection
 import math
+from django.views.decorators.cache import cache_page
+from django.conf import settings
+
 
 class MockPage:
     def __init__(self, items, number, total, limit):
@@ -23,7 +26,7 @@ class MockPage:
     def next_page_number(self): return self.number + 1
     def previous_page_number(self): return self.number - 1
 
-
+@cache_page(settings.CACHE_TTL_HOME, key_prefix="home_page")
 def store(request):
 
     all_product = Product.objects.filter(is_fake=False)
@@ -40,7 +43,7 @@ def store(request):
     
     return render(request, 'store/store.html', context)
 
-
+@cache_page(settings.CACHE_TTL_CATEGORY, key_prefix="category_page")
 def list_category(request, category_slug):
     category = get_object_or_404(Category,slug = category_slug)
     products_list = Product.objects.filter(
@@ -56,7 +59,7 @@ def list_category(request, category_slug):
 
     return render(request, 'store/list-category.html', context) 
 
-
+@cache_page(settings.CACHE_TTL_HOME, key_prefix="product_detail")
 def product_info(request, product_slug):
     product = get_object_or_404(Product, slug=product_slug, is_fake=False )
 
