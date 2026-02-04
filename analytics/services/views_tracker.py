@@ -30,6 +30,7 @@ def track_product_view(request, product):
     ip_address = get_client_ip(request)
     session_id = request.session.session_key
     session_cache = caches['sessions']
+    
     # 防重複計數鎖：60 秒內同個 Session 看同個商品不重複計入 Redis 緩衝
     prevent_key = f"view_prevent:{product.id}:{session_id}"
     if session_cache.get(prevent_key):

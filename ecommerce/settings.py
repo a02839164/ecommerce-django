@@ -288,8 +288,6 @@ CELERY_BEAT_SCHEDULE = {
         'schedule': crontab(minute='*/5'),      #5分鐘執行一次
     },
 }
-CACHE_TTL_HOME = 60 * 15  # 首頁快取 15 分鐘
-CACHE_TTL_CATEGORY = 60 * 10  # 分類頁快取 10 分鐘
 
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "sessions"
