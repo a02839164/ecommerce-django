@@ -22,6 +22,7 @@ services:
     build: .
     image: buyria_app:latest
     container_name: buyria_web
+    restart: always
     env_file:
       - .env
     volumes:
