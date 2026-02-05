@@ -1,0 +1,75 @@
+name: Django CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      DEBUG: "False"
+      DJANGO_ENV: "test"
+      SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      POSTGRES_DB: ${{ secrets.DB_NAME }}
+      POSTGRES_USER: ${{ secrets.DB_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      REDIS_URL: "redis://localhost:6379/1"
+      GOOGLE_APPLICATION_CREDENTIALS: "gcp.json" #
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_NAME: ${{ secrets.DB_NAME }}       
+          POSTGRES_USER: ${{ secrets.DB_USER }}      
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }} 
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.13
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Create GCP Service Account Key
+      run: |
+        echo '${{ secrets.GCP_KEY }}' > gcp.json
+
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev gcc
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Run Database Migrations
+      run: |
+        python manage.py migrate
+
+    - name: Run Tests
+      run: |
+        python manage.py test
