@@ -75,10 +75,14 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libpq-dev gcc
+        sudo apt-get install -y libpq-dev gcc ***ql-client
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Enable Postgres Extensions
+      run: |
+        PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+    
     - name: Run Database Migrations
       run: |
         python manage.py migrate
