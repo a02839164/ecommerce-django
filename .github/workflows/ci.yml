@@ -90,7 +90,6 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-
       - name: 'Authenticate to Google Cloud'
         uses: 'google-github-actions/auth@v2'
         with:
@@ -102,6 +101,7 @@ jobs:
         with:
           instance_name: 'buyria-vm'
           zone: 'asia-east1-c'
+          user: 'a02839164'
           flags: '--tunnel-through-iap'
           ssh_private_key: '${{ secrets.SSH_PRIVATE_KEY }}'
           command: |
