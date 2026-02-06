@@ -104,14 +104,7 @@ jobs:
           zone: 'asia-east1-c'
           flags: '--tunnel-through-iap'
           ssh_private_key: '${{ secrets.SSH_PRIVATE_KEY }}'
-          command: >
-            bash -lc "
-            set -e
-            cd /home/a02839164/dev/ecommerce_project
-            git pull origin main
-            sudo docker compose up -d --build
-            sleep 10
-            sudo docker compose ps
-            sudo docker compose logs --tail=20 web
-            sudo docker compose ps web | grep 'Up'
-            "
+          command: |
+              cd /home/a02839164/dev/ecommerce_project
+              chmod +x deploy.sh
+              ./deploy.sh
