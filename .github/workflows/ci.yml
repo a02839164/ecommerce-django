@@ -1,9 +1,7 @@
-name: Django CI
+name: Django CI/CD Pipeline
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
     branches: [ "main" ]
 
 jobs:
@@ -86,3 +84,29 @@ jobs:
     - name: Run Tests
       run: |
         python manage.py test
+
+  deploy:
+    needs: test  
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to VM via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/dev/ecommerce_project
+            git pull origin main
+            docker-compose up -d --build
+
+            echo "Waiting for containers to initialize..."
+            sleep 10
+
+            echo "--- Container Status ---"
+            docker-compose ps
+
+            echo "--- Latest Web Logs (Verification) ---"
+            docker-compose logs --tail=20 web
+            docker-compose ps web | grep "Up"
