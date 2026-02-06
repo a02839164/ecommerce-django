@@ -73,7 +73,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libpq-dev gcc ***ql-client
+        sudo apt-get install -y libpq-dev gcc postgresql-client
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
@@ -95,14 +95,15 @@ jobs:
         uses: 'google-github-actions/auth@v2'
         with:
           credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          project_id: 'my-shopping-website-project'
 
       - name: 'Deploy via Cloud IAP'
         uses: 'google-github-actions/ssh-compute@v1'
         with:
           instance_name: 'buyria-vm'
-          zone: 'asia-east1-b'
+          zone: 'asia-east1-c'
+          flags: '--tunnel-through-iap'
           ssh_private_key: '${{ secrets.SSH_PRIVATE_KEY }}'
-          use_iap: true
           command: |
             cd ~/dev/ecommerce_project
             git pull origin main
