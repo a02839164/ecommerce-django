@@ -90,23 +90,30 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VM via SSH
-        uses: appleboy/ssh-action@v1.0.3
+
+      - name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: 'Deploy via Cloud IAP'
+        uses: 'google-github-actions/ssh-compute@v1'
+        with:
+          instance_name: 'buyria-vm'
+          zone: 'asia-east1-b'
+          ssh_private_key: '${{ secrets.SSH_PRIVATE_KEY }}'
+          use_iap: true
+          command: |
             cd ~/dev/ecommerce_project
             git pull origin main
             docker-compose up -d --build
-
+            
             echo "Waiting for containers to initialize..."
             sleep 10
-
+            
             echo "--- Container Status ---"
             docker-compose ps
-
+            
             echo "--- Latest Web Logs (Verification) ---"
             docker-compose logs --tail=20 web
             docker-compose ps web | grep "Up"
