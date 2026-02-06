@@ -105,16 +105,16 @@ jobs:
           flags: '--tunnel-through-iap'
           ssh_private_key: '${{ secrets.SSH_PRIVATE_KEY }}'
           command: |
-            cd ~/dev/ecommerce_project
+            cd /home/a02839164/dev/ecommerce_project
             git pull origin main
-            docker-compose up -d --build
+            sudo docker compose up -d --build
             
             echo "Waiting for containers to initialize..."
             sleep 10
             
             echo "--- Container Status ---"
-            docker-compose ps
+            sudo docker compose ps
             
             echo "--- Latest Web Logs (Verification) ---"
-            docker-compose logs --tail=20 web
-            docker-compose ps web | grep "Up"
+            sudo docker compose logs --tail=20 web
+            sudo docker compose ps web | grep "Up"
