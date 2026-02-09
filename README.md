@@ -1,4 +1,4 @@
-# Django 實作的電商後端系統
+# Buyria 購物商城：基於 Docker 容器化的 Django 電商平台 
 
 [![Live Demo](https://img.shields.io/badge/線上-Demo-brightgreen?style=for-the-badge)](https://buyriastore.com)
 
@@ -31,16 +31,15 @@
 
 
 ### 2. Docker 容器化與服務編排
-透過 Docker 與 docker-compose 統一開發與執行環境，Python版本、套件與系統相依性一致，避免因環境差異導致的部署問題，一鍵指令完成所有服務的啟動與串接。
+透過 Docker 與 docker compose 統一開發與執行環境，Python版本、套件與系統相依性一致，整合 Django、PostgreSQL、Redis 與 Celery 於獨立容器中運作，一鍵指令完成所有服務的啟動與串接。
 
 **我的做法：**
-* **多服務架構編排：** 整合 Django、PostgreSQL、Redis 與 Celery 於獨立容器中運作，實現環境隔離。
 * **多階段建置優化：** Python image 換成 Slim ，搭配 multi-stage build，把 build-time 依賴和 runtime 拆開，在實測環境下將 Docker image 體積減少約 70～75%（約由 2GB 降至 486MB），並降低執行環境的攻擊面。
 * **容器內溝通實務：** 使用 service name 作為主機名稱進行跨容器通訊，避免硬編碼 IP；並應用於自動化備份任務，使用 Celery 容器定期執行腳本，跨容器連線至資料庫執行 `pg_dump` 備份。
 
 
 ### 3. Redis 實務應用 & 配置
-我引入 Redis 作為記憶體資料庫。將原本放在資料庫或檔案系統的 Session 與常用資料快取 Cache 移至 Redis，減少磁碟 I/O，讓系統在高流量下保持低延遲。
+引入 Redis 作為記憶體資料庫。將原本放在資料庫或檔案系統的 Session 與常用資料快取 Cache 移至 Redis，減少磁碟 I/O，讓系統在高流量下保持低延遲。
 
 **我的做法：**
 * **資料庫區隔：** 配置不同的資料庫編號，讓 Session 儲存與快取資料分開。
@@ -72,6 +71,14 @@
 **帶來的保障：**
   系統在面對真實網路環境時更具彈性，提升了使用者的帳號安全性，也大幅降低了伺服器被惡意流量灌爆的風險。
 
+
+### 6. 自動化流程：CI/CD 管道設計
+手動部署容易因環境差異、人為失誤導致生產環境崩潰。我建立自動化流水線，確保每一行進入 main 分支的程式碼先經過測試後再安全部署。
+
+**我的做法：**
+* **自動化測試 (CI)：** 使用 GitHub Actions 透過 Docker 啟動與生產環境版本一致的 PostgreSQL、Redis ，自動執行資料庫遷移、運行 18 項單元測試，確保功能完整性。
+* **安全遠端部署 (CD)：** 採取 Google Cloud IAP 連線至 GCP VM。撰寫 deploy.sh 部署腳本，自動化拉取程式碼、環境變數同步與容器重啟，並僅在 CI 測試完全通過後，授權 Service Account 執行部署。
+
 ---
 
 ## 技術棧與佈署
@@ -86,6 +93,7 @@
   * **金流與物流：** PayPal REST API, Shippo API
   * **驗證與通訊：** Google OAuth 2.0, SendGrid (Email)
   * **安全防護：** Cloudflare WAF, Turnstile
+* **CI/CD 工具：** GitHub Actions
 
 ### 生產環境架構
 **本專案部署於 Google Cloud Platform (GCP)，並採用標準化生產配置：**
@@ -124,4 +132,3 @@ docker exec -it buyria_web python manage.py test
 如果您欲瞭解專案的後台架構，歡迎透過 Email 聯繫。可提供後台測試帳號，進一步檢視管理流程、庫存異動日誌( csv設計 )與結構設計。
 
 * **Email:** a02839164@gmail.com
-
